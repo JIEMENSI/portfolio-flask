@@ -509,22 +509,23 @@
 
     .modal-header {
       padding: 16px 20px;
-      border-bottom: 1px solid #f0f0f0;
+      background: linear-gradient(135deg, #4dd98a 0%, #3dc978 100%);
+      border-bottom: none;
       display: flex;
       align-items: center;
       justify-content: space-between;
       font-size: 16px;
       font-weight: 600;
-      color: #1a1a1a;
+      color: #fff;
     }
 
     .modal-close {
       width: 28px;
       height: 28px;
       border: none;
-      background: transparent;
+      background: rgba(255,255,255,0.2);
       font-size: 18px;
-      color: #999;
+      color: #fff;
       cursor: pointer;
       border-radius: 4px;
       display: flex;
@@ -533,23 +534,61 @@
     }
 
     .modal-close:hover {
-      background: #f5f5f5;
-      color: #333;
+      background: rgba(255,255,255,0.35);
+      color: #fff;
     }
 
     .modal-body {
-      padding: 28px 24px;
+      padding: 28px 24px 12px;
       text-align: center;
       color: #555;
       font-size: 14px;
       line-height: 1.7;
     }
 
+    .modal-body .promo-img {
+      width: 100%;
+      max-width: 300px;
+      border-radius: 12px;
+      display: block;
+      margin: 0 auto 16px;
+    }
+
     .modal-body .highlight {
       color: #3dc978;
-      font-weight: 600;
-      font-size: 18px;
-      margin-bottom: 8px;
+      font-weight: 700;
+      font-size: 22px;
+      margin-bottom: 12px;
+    }
+
+    .modal-body .offer {
+      font-size: 20px;
+      color: #333;
+      margin-top: 16px;
+    }
+
+    .modal-body .offer strong {
+      color: #3dc978;
+      font-size: 44px;
+      font-weight: 800;
+      margin: 0 6px;
+    }
+
+    .modal-body .tags {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 8px;
+      margin-top: 12px;
+    }
+
+    .modal-body .tag {
+      background: #f0fff5;
+      color: #3dc978;
+      padding: 4px 12px;
+      border-radius: 14px;
+      font-size: 12px;
+      border: 1px solid #d4f0de;
     }
 
     .modal-footer {
@@ -560,7 +599,7 @@
     }
 
     .modal-footer .btn {
-      min-width: 100px;
+      min-width: 120px;
     }
   </style>
 </head>
@@ -706,17 +745,21 @@
   <div class="modal-mask" id="modalMask">
     <div class="modal">
       <div class="modal-header">
-        <span>拉新领奖</span>
+        <span>毛豆上线！</span>
         <button class="modal-close" id="modalClose">×</button>
       </div>
       <div class="modal-body">
-        <div class="highlight">邀请好友 一起领奖</div>
-        <p>分享专属邀请链接，好友注册并完成绑定店铺后，双方均可获得奖励点数。</p>
-        <p style="margin-top:12px;color:#999;font-size:13px;">（此为原型弹窗，后续可对接真实活动逻辑）</p>
+        <div class="highlight">毛豆抖店上货</div>
+        <img class="promo-img" src="微信图片_20260807184253_344_4.png" alt="毛豆上线" />
+        <p class="offer">新用户注册即送 <strong>100</strong> 点数量包</p>
+        <div class="tags">
+          <span class="tag">不限制上货数量</span>
+          <span class="tag">数量包充值 · 账号所有店铺共用</span>
+        </div>
       </div>
       <div class="modal-footer">
         <button class="btn btn-default" id="modalCancel">取消</button>
-        <button class="btn btn-primary" id="modalConfirm">立即邀请</button>
+        <button class="btn btn-primary" id="modalConfirm">前往使用</button>
       </div>
     </div>
   </div>
@@ -839,7 +882,7 @@
       closeBtn.addEventListener('click', closeModal);
       cancelBtn.addEventListener('click', closeModal);
       confirmBtn.addEventListener('click', function () {
-        alert('原型提示：已触发邀请逻辑');
+        alert('正在前往使用...');
         closeModal();
       });
       mask.addEventListener('click', function (e) {
