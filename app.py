@@ -110,6 +110,9 @@ def inject_user():
 
 @app.route("/")
 def index():
+    # 已登录用户看作品列表，未登录跳登录页
+    if session.get("role") in ("admin", "guest"):
+        return redirect(url_for("works_list"))
     return redirect(url_for("login"))
 
 @app.route("/works")
