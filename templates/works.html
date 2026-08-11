@@ -2,42 +2,163 @@
 {% block title %}全部作品 - 个人作品集{% endblock %}
 
 {% block content %}
-<div class="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-  <div class="mb-10">
-    <h1 class="text-2xl font-semibold text-gray-900 tracking-tight">全部作品</h1>
-    <p class="mt-1 text-gray-400 text-sm">共 {{ works|length }} 个作品</p>
+<div class="page-container page-fade-in">
+  <!-- 不对称标题区域 -->
+  <div class="page-header animate-slide-left" data-delay="100">
+    <div class="header-decoration">
+      <div class="deco-circle deco-circle-1"></div>
+      <div class="deco-circle deco-circle-2"></div>
+    </div>
+    <h1 class="page-title">
+      <span class="title-highlight">全部</span>作品
+      <span class="title-emoji">✨</span>
+    </h1>
+    <p class="page-subtitle">
+      <span class="count-badge">{{ works|length }}</span>
+      个创意作品等你来探索
+    </p>
   </div>
 
   {% if works %}
-  <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+  <div class="works-grid">
     {% for work in works %}
-    <a href="{{ url_for('work_detail', work_id=work.id) }}" class="group block bg-white rounded-xl border border-gray-100 overflow-hidden hover:border-gray-200 hover:shadow-sm transition-all duration-200">
+    <a href="{{ url_for('work_detail', work_id=work.id) }}" 
+       class="work-card" 
+       data-delay="{{ loop.index0 * 80 }}">
       {% if work.cover %}
-      <div class="aspect-[4/3] bg-gray-50 overflow-hidden">
-        <img src="{{ url_for('static', filename='covers/' + work.cover) }}" alt="{{ work.title }}"
-             class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300">
+      <div class="work-cover">
+        <img src="{{ url_for('static', filename='covers/' + work.cover) }}" alt="{{ work.title }}">
+        <div class="work-cover-overlay">
+          <span class="view-badge">查看详情 →</span>
+        </div>
       </div>
       {% else %}
-      <div class="aspect-[4/3] bg-gradient-to-br from-gray-50 to-gray-100 flex items-center justify-center">
-        <svg class="w-10 h-10 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
-        </svg>
+      <div class="work-empty-cover">
+        <div class="empty-icon-wrapper">
+          <svg class="w-10 h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+          </svg>
+        </div>
       </div>
       {% endif %}
-      <div class="p-5">
-        <h3 class="font-medium text-gray-900 group-hover:text-gray-600 truncate transition-colors">{{ work.title }}</h3>
+      <div class="work-info">
+        <h3 class="work-name">{{ work.title }}</h3>
         {% if work.description %}
-        <p class="mt-1.5 text-sm text-gray-400 line-clamp-2">{{ work.description }}</p>
+        <p class="work-desc">{{ work.description }}</p>
         {% endif %}
-        <p class="mt-3 text-xs text-gray-300">{{ work.created_at }}</p>
+        <div class="work-footer">
+          <span class="work-meta">
+            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" style="display:inline;vertical-align:middle;">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
+            </svg>
+            {{ work.created_at }}
+          </span>
+          <span class="work-arrow">→</span>
+        </div>
       </div>
     </a>
     {% endfor %}
   </div>
   {% else %}
-  <div class="text-center py-20 bg-white rounded-xl border border-gray-100">
-    <p class="text-gray-400">还没有作品，请管理员登录后上传。</p>
+  <div class="card animate-scale-in">
+    <div class="card-body empty-state">
+      <div class="empty-icon-wrapper" style="width:80px;height:80px;margin:0 auto 1rem;">
+        <svg class="w-16 h-16 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1" d="M12 6v6m0 0v6m0-6h6m-6 0H6"/>
+        </svg>
+      </div>
+      <p style="margin-bottom:1rem;font-size:1.125rem;font-weight:600;color:#666;">还没有作品</p>
+      <p style="margin-bottom:1.5rem;color:#999;">请管理员登录后上传第一个作品</p>
+      <a href="{{ url_for('login') }}" class="btn btn-primary">立即登录</a>
+    </div>
   </div>
   {% endif %}
 </div>
+
+<style>
+  .header-decoration { position: absolute; top: -20px; right: 0; width: 100px; height: 100px; pointer-events: none; }
+  .deco-circle { position: absolute; border-radius: 50%; }
+  .deco-circle-1 { width: 60px; height: 60px; background: linear-gradient(135deg, #7c3aed, #ec4899); opacity: 0.15; top: 0; right: 0; animation: float 4s ease-in-out infinite; }
+  .deco-circle-2 { width: 30px; height: 30px; background: linear-gradient(135deg, #22d3ee, #7c3aed); opacity: 0.2; bottom: 0; right: 30px; animation: float 5s ease-in-out infinite reverse; }
+  
+  .title-highlight {
+    background: linear-gradient(135deg, #7c3aed, #ec4899);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+  .title-emoji { display: inline-block; animation: bounce 2s ease-in-out infinite; }
+  
+  .count-badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 32px;
+    height: 32px;
+    padding: 0 8px;
+    background: linear-gradient(135deg, #7c3aed, #ec4899);
+    color: #fff;
+    border-radius: 16px;
+    font-weight: 700;
+    font-size: 0.875rem;
+    box-shadow: 0 4px 12px rgba(124, 58, 237, 0.3);
+  }
+  
+  .work-cover { position: relative; }
+  .work-cover-overlay {
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(to top, rgba(124, 58, 237, 0.4), transparent);
+    opacity: 0;
+    transition: opacity 0.3s ease;
+    display: flex;
+    align-items: flex-end;
+    justify-content: center;
+    padding-bottom: 1rem;
+  }
+  .work-card:hover .work-cover-overlay { opacity: 1; }
+  .view-badge {
+    background: rgba(255, 255, 255, 0.95);
+    color: #7c3aed;
+    padding: 0.375rem 1rem;
+    border-radius: 9999px;
+    font-size: 0.8125rem;
+    font-weight: 600;
+    transform: translateY(10px);
+    transition: transform 0.3s var(--transition-bounce);
+  }
+  .work-card:hover .view-badge { transform: translateY(0); }
+  
+  .work-footer {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-top: 0.75rem;
+  }
+  .work-meta { display: flex; align-items: center; gap: 4px; }
+  .work-arrow {
+    opacity: 0;
+    transform: translateX(-5px);
+    transition: all 0.3s ease;
+    color: #7c3aed;
+    font-weight: bold;
+  }
+  .work-card:hover .work-arrow {
+    opacity: 1;
+    transform: translateX(0);
+  }
+  
+  .empty-icon-wrapper {
+    width: 80px;
+    height: 80px;
+    background: linear-gradient(135deg, rgba(124, 58, 237, 0.1), rgba(236, 72, 153, 0.1));
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto;
+    color: #aaa;
+  }
+  .empty-icon-wrapper svg { color: #ccc; }
+</style>
 {% endblock %}

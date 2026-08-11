@@ -6,54 +6,94 @@
   <title>{% block title %}个人作品集{% endblock %}</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <style>
-    body { 
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
-      background-color: #fafafa;
+    * { box-sizing: border-box; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "PingFang SC", "Microsoft YaHei", sans-serif;
+      color: #222;
+      -webkit-font-smoothing: antialiased;
     }
-    .iframe-container { width: 100%; height: 80vh; border: 1px solid #e5e7eb; border-radius: 0.5rem; overflow: hidden; }
+    .iframe-container { width: 100%; height: 80vh; border: 1px solid #EEE; border-radius: 1rem; overflow: hidden; }
     .iframe-container iframe { width: 100%; height: 100%; border: none; }
-
-    /* 内容区域层级 */
-    .content-wrapper {
-      position: relative;
-      z-index: 1;
-    }
+    .content-wrapper { position: relative; z-index: 1; }
   </style>
+  {% block extra_css %}{% endblock %}
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/works.css') }}">
 </head>
 <body class="text-gray-800 min-h-screen flex flex-col">
+  <!-- 视差装饰背景 blob -->
+  <div class="parallax-blob parallax-blob-1" data-speed="0.03"></div>
+  <div class="parallax-blob parallax-blob-2" data-speed="0.06"></div>
+  <div class="parallax-blob parallax-blob-3" data-speed="0.09"></div>
+  <div class="parallax-blob parallax-blob-4" data-speed="0.12"></div>
+  
+  <!-- 浮动装饰元素 -->
+  <div class="floating-shape" style="top: 15%; right: 5%;">
+    <svg width="40" height="40" viewBox="0 0 40 40" fill="none">
+      <rect x="2" y="2" width="36" height="36" rx="8" fill="url(#grad1)" opacity="0.6"/>
+      <defs>
+        <linearGradient id="grad1" x1="0%" y1="0%" x2="100%" y2="100%">
+          <stop offset="0%" stop-color="#7c3aed"/>
+          <stop offset="100%" stop-color="#ec4899"/>
+        </linearGradient>
+      </defs>
+    </svg>
+  </div>
+  <div class="floating-shape" style="top: 45%; left: 3%; animation-delay: 1s;">
+    <svg width="30" height="30" viewBox="0 0 30 30" fill="none">
+      <circle cx="15" cy="15" r="13" fill="url(#grad2)" opacity="0.5"/>
+      <defs>
+        <linearGradient id="grad2" x1="0%" y1="0%" x2="100%" y2="100%">
+          <stop offset="0%" stop-color="#22d3ee"/>
+          <stop offset="100%" stop-color="#7c3aed"/>
+        </linearGradient>
+      </defs>
+    </svg>
+  </div>
+  <div class="floating-shape" style="bottom: 20%; right: 8%; animation-delay: 2s;">
+    <svg width="35" height="35" viewBox="0 0 35 35" fill="none">
+      <path d="M17.5 2L22 13.5L34 14.5L25 23L28 35L17.5 29L7 35L10 23L1 14.5L13 13.5Z" fill="url(#grad3)" opacity="0.4"/>
+      <defs>
+        <linearGradient id="grad3" x1="0%" y1="0%" x2="100%" y2="100%">
+          <stop offset="0%" stop-color="#f59e0b"/>
+          <stop offset="100%" stop-color="#ec4899"/>
+        </linearGradient>
+      </defs>
+    </svg>
+  </div>
+
   <!-- 导航栏 -->
-  <nav class="bg-white/90 backdrop-blur-sm border-b border-gray-200 sticky top-0 z-50">
+  <nav class="bg-white/70 backdrop-blur-sm nav-bar sticky top-0 z-50">
     <div class="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
       <div class="flex justify-between h-14 items-center">
         <div class="flex items-center gap-6">
-          <a href="{{ url_for('index') }}" class="text-lg font-semibold text-gray-900 hover:text-gray-600 tracking-tight">作品广场</a>
+          <a href="{{ url_for('index') }}" class="nav-brand">作品广场</a>
           {% if user_role == 'admin' %}
           <div class="flex items-center gap-2 pl-6 border-l border-gray-200">
             <form id="avatarForm" method="post" action="{{ url_for('upload_avatar') }}" enctype="multipart/form-data" style="display:none;">
               <input type="file" name="avatar_file" id="avatarFile" accept=".png,.jpg,.jpeg,.gif,.webp">
             </form>
             <img id="navAvatar" src="{{ url_for('static', filename=avatar_url) }}?v={{ range(100000) | random }}" alt="头像"
-                 class="w-8 h-8 rounded-full object-cover border border-gray-200 shadow-sm cursor-pointer hover:opacity-80 transition-opacity"
+                 class="nav-user-avatar w-8 h-8 rounded-full object-cover shadow-sm cursor-pointer"
                  title="点击更换头像" onclick="document.getElementById('avatarFile').click();">
-            <span class="text-sm text-gray-600">{{ display_name }}</span>
+            <span class="nav-user-name text-sm">{{ display_name }}</span>
           </div>
           {% elif user_role == 'guest' %}
           <div class="flex items-center gap-2 pl-6 border-l border-gray-200">
-            <img src="{{ url_for('static', filename=avatar_url) }}" alt="头像" class="w-8 h-8 rounded-full object-cover border border-gray-200 shadow-sm">
-            <span class="text-sm text-gray-600">{{ display_name }}</span>
+            <img src="{{ url_for('static', filename=avatar_url) }}" alt="头像" class="nav-user-avatar w-8 h-8 rounded-full object-cover shadow-sm">
+            <span class="nav-user-name text-sm">{{ display_name }}</span>
           </div>
           {% endif %}
         </div>
         <div class="flex items-center gap-4">
           {% if session.get('role') == 'admin' %}
-            <a href="{{ url_for('admin') }}" class="text-sm text-gray-500 hover:text-gray-800">管理后台</a>
-            <a href="{{ url_for('logout') }}" class="text-sm text-red-500 hover:text-red-600">退出</a>
+            <a href="{{ url_for('admin') }}" class="nav-text-btn">管理后台</a>
+            <a href="{{ url_for('logout') }}" class="nav-text-btn">退出</a>
           {% elif session.get('role') == 'guest' %}
-            <a href="{{ url_for('login') }}" class="text-sm px-4 py-1.5 rounded-md bg-gray-800 text-white hover:bg-gray-700 transition-colors">管理员登录</a>
-            <a href="{{ url_for('logout') }}" class="text-sm text-red-500 hover:text-red-600">退出</a>
+            <a href="{{ url_for('login') }}" class="nav-btn-login">管理员登录</a>
+            <a href="{{ url_for('logout') }}" class="nav-text-btn">退出</a>
           {% else %}
             {% if request.endpoint != 'login' %}
-              <a href="{{ url_for('login') }}" class="text-sm px-4 py-1.5 rounded-md bg-gray-800 text-white hover:bg-gray-700 transition-colors">上传作品</a>
+              <a href="{{ url_for('login') }}" class="nav-btn-login">上传作品</a>
             {% endif %}
           {% endif %}
         </div>
@@ -82,10 +122,8 @@
   </main>
 
   <!-- 页脚 -->
-  <footer class="border-t border-gray-200 bg-white/80 mt-16 content-wrapper">
-    <div class="max-w-5xl mx-auto px-4 py-8 text-center text-sm text-gray-400">
-      © 2026 个人作品集
-    </div>
+  <footer class="site-footer content-wrapper">
+    <div>© 2026 个人作品集</div>
   </footer>
 
   <!-- Flash 提示框 2 秒后自动淡出消失 -->
@@ -98,7 +136,7 @@
       }, 2000);
     });
 
-    // 头像选完自动上传
+    // 头像上传
     (function(){
       var input = document.getElementById('avatarFile');
       if(!input) return;
@@ -107,6 +145,195 @@
           document.getElementById('avatarForm').submit();
         }
       });
+    })();
+
+    // 视差滚动效果
+    (function(){
+      var blobs = document.querySelectorAll('.parallax-blob');
+      var shapes = document.querySelectorAll('.floating-shape');
+      var ticking = false;
+      var mouseX = 0, mouseY = 0;
+      var targetX = 0, targetY = 0;
+
+      document.addEventListener('mousemove', function(e) {
+        mouseX = (e.clientX / window.innerWidth - 0.5) * 2;
+        mouseY = (e.clientY / window.innerHeight - 0.5) * 2;
+      });
+
+      function updateParallax() {
+        var scrollY = window.pageYOffset;
+        
+        // 平滑鼠标跟随
+        targetX += (mouseX - targetX) * 0.05;
+        targetY += (mouseY - targetY) * 0.05;
+
+        blobs.forEach(function(blob) {
+          var speed = parseFloat(blob.dataset.speed) || 0.05;
+          var scrollOffset = scrollY * speed;
+          var mouseOffsetX = targetX * 20 * speed;
+          var mouseOffsetY = targetY * 20 * speed;
+          blob.style.transform = 'translate(' + mouseOffsetX + 'px, ' + (scrollOffset + mouseOffsetY) + 'px)';
+        });
+
+        shapes.forEach(function(shape, index) {
+          var depth = (index + 1) * 8;
+          var mouseOffsetX = targetX * depth;
+          var mouseOffsetY = targetY * depth;
+          shape.style.setProperty('--mouse-x', mouseOffsetX + 'px');
+          shape.style.setProperty('--mouse-y', mouseOffsetY + 'px');
+        });
+
+        ticking = false;
+      }
+
+      window.addEventListener('scroll', function() {
+        if (!ticking) {
+          window.requestAnimationFrame(updateParallax);
+          ticking = true;
+        }
+      }, { passive: true });
+
+      window.addEventListener('mousemove', function() {
+        if (!ticking) {
+          window.requestAnimationFrame(updateParallax);
+          ticking = true;
+        }
+      });
+
+      updateParallax();
+    })();
+
+    // 作品卡片依次进入动画（先添加类）
+    (function(){
+      var grid = document.querySelector('.works-grid');
+      if (!grid) return;
+      
+      var cards = grid.querySelectorAll('.work-card');
+      cards.forEach(function(card, index) {
+        card.classList.add('animate-on-scroll');
+        card.style.transitionDelay = (index * 100) + 'ms';
+      });
+    })();
+
+    // 滚动触发动画（多种动画类型）
+    (function(){
+      var selectors = [
+        '.animate-on-scroll',
+        '.animate-slide-left',
+        '.animate-slide-right',
+        '.animate-scale-in'
+      ];
+      
+      var elements = document.querySelectorAll(selectors.join(','));
+      if (!elements.length) return;
+
+      // 安全回退：如果 IntersectionObserver 不可用，直接显示所有元素
+      if (!('IntersectionObserver' in window)) {
+        elements.forEach(function(el) { el.classList.add('visible'); });
+        return;
+      }
+
+      var observer = new IntersectionObserver(function(entries) {
+        entries.forEach(function(entry) {
+          if (entry.isIntersecting) {
+            // 添加延迟效果
+            var delay = entry.target.dataset.delay || 0;
+            setTimeout(function() {
+              entry.target.classList.add('visible');
+            }, delay);
+            observer.unobserve(entry.target);
+          }
+        });
+      }, { 
+        threshold: 0.1,
+        rootMargin: '0px 0px -50px 0px'
+      });
+
+      elements.forEach(function(el) { observer.observe(el); });
+
+      // 额外安全措施：1秒后强制显示所有动画元素
+      setTimeout(function() {
+        elements.forEach(function(el) {
+          if (!el.classList.contains('visible')) {
+            el.classList.add('visible');
+            observer.unobserve(el);
+          }
+        });
+      }, 1000);
+    })();
+
+    // 作品卡片 3D 倾斜效果
+    (function(){
+      var cards = document.querySelectorAll('.work-card, .tilt-card');
+      if (!cards.length) return;
+
+      cards.forEach(function(card) {
+        card.addEventListener('mousemove', function(e) {
+          var rect = card.getBoundingClientRect();
+          var x = e.clientX - rect.left;
+          var y = e.clientY - rect.top;
+          var centerX = rect.width / 2;
+          var centerY = rect.height / 2;
+          var rotateX = ((y - centerY) / centerY) * -5;
+          var rotateY = ((x - centerX) / centerX) * 5;
+          
+          card.style.transform = 'translateY(-12px) rotateX(' + rotateX + 'deg) rotateY(' + rotateY + 'deg) scale(1.02)';
+        });
+
+        card.addEventListener('mouseleave', function() {
+          card.style.transform = '';
+        });
+      });
+    })();
+
+    // 按钮涟漪效果
+    (function(){
+      var buttons = document.querySelectorAll('.btn, .nav-btn-login');
+      buttons.forEach(function(btn) {
+        btn.addEventListener('click', function(e) {
+          var rect = btn.getBoundingClientRect();
+          var x = e.clientX - rect.left;
+          var y = e.clientY - rect.top;
+          
+          var ripple = document.createElement('span');
+          ripple.style.cssText = 'position:absolute;border-radius:50%;background:rgba(255,255,255,0.5);pointer-events:none;transform:translate(-50%,-50%);animation:rippleEffect 0.6s ease-out forwards;';
+          ripple.style.left = x + 'px';
+          ripple.style.top = y + 'px';
+          ripple.style.width = ripple.style.height = '0';
+          
+          btn.style.position = 'relative';
+          btn.style.overflow = 'hidden';
+          btn.appendChild(ripple);
+          
+          setTimeout(function() {
+            ripple.remove();
+          }, 600);
+        });
+      });
+
+      // 添加涟漪动画
+      var style = document.createElement('style');
+      style.textContent = '@keyframes rippleEffect { to { width: 200px; height: 200px; opacity: 0; } }';
+      document.head.appendChild(style);
+    })();
+
+    // 导航栏滚动效果
+    (function(){
+      var nav = document.querySelector('.nav-bar');
+      if (!nav) return;
+      
+      var lastScroll = 0;
+      window.addEventListener('scroll', function() {
+        var currentScroll = window.pageYOffset;
+        
+        if (currentScroll > 100) {
+          nav.style.boxShadow = '0 4px 20px rgba(124, 58, 237, 0.1)';
+        } else {
+          nav.style.boxShadow = 'none';
+        }
+        
+        lastScroll = currentScroll;
+      }, { passive: true });
     })();
   </script>
 </body>

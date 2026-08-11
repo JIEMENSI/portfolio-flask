@@ -2,61 +2,207 @@
 {% block title %}上传作品 - 个人作品集{% endblock %}
 
 {% block content %}
-<div class="max-w-lg mx-auto px-4 py-10">
-  <div class="mb-6">
-    <a href="{{ url_for('admin') }}" class="text-sm text-blue-600 hover:underline">← 返回管理后台</a>
-  </div>
+<div class="page-container-sm page-fade-in">
+  <a href="{{ url_for('admin') }}" class="back-link">
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-right:6px;">
+      <path d="M19 12H5M12 19l-7-7 7-7"/>
+    </svg>
+    返回管理后台
+  </a>
 
-  <div class="bg-white rounded-xl border border-gray-200 p-6 sm:p-8">
-    <h1 class="text-xl font-bold text-gray-900 mb-6">上传 HTML 作品</h1>
+  <div class="card card-body-lg upload-card animate-scale-in">
+    <!-- 上传图标 -->
+    <div class="upload-header">
+      <div class="upload-icon">
+        <svg width="40" height="40" viewBox="0 0 40 40" fill="none">
+          <rect x="4" y="4" width="32" height="32" rx="8" fill="url(#uploadGrad)"/>
+          <path d="M20 28V16" stroke="white" stroke-width="2.5" stroke-linecap="round"/>
+          <path d="M14 22L20 16L26 22" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+          <path d="M12 28H28" stroke="white" stroke-width="2" stroke-linecap="round" opacity="0.7"/>
+          <defs>
+            <linearGradient id="uploadGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+              <stop offset="0%" stop-color="#7c3aed"/>
+              <stop offset="50%" stop-color="#ec4899"/>
+              <stop offset="100%" stop-color="#22d3ee"/>
+            </linearGradient>
+          </defs>
+        </svg>
+      </div>
+      <h1 class="upload-title">上传 HTML 作品</h1>
+      <p class="upload-subtitle">将你的创意作品分享到作品广场</p>
+    </div>
 
-    <form method="POST" enctype="multipart/form-data" class="space-y-5">
-      <div>
-        <label for="title" class="block text-sm font-medium text-gray-700 mb-1">
-          作品名称 <span class="text-red-500">*</span>
+    <form method="POST" enctype="multipart/form-data" class="upload-form">
+      <div class="form-group">
+        <label for="title" class="form-label">
+          作品名称 <span class="form-required">*</span>
         </label>
-        <input type="text" id="title" name="title" required
-               class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-               placeholder="请输入作品名称">
+        <input type="text" id="title" name="title" required class="form-input" placeholder="给你的作品起一个响亮的名字">
       </div>
 
-      <div>
-        <label for="description" class="block text-sm font-medium text-gray-700 mb-1">作品简介（可选）</label>
-        <textarea id="description" name="description" rows="3"
-                  class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  placeholder="简单介绍这个作品"></textarea>
+      <div class="form-group">
+        <label for="description" class="form-label">作品简介</label>
+        <textarea id="description" name="description" rows="3" class="form-textarea" placeholder="简单介绍这个作品的创意和亮点"></textarea>
       </div>
 
-      <div>
-        <label for="remark" class="block text-sm font-medium text-gray-700 mb-1">备注（可选）</label>
-        <input type="text" id="remark" name="remark"
-               class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-               placeholder="例如：客户、来源、版本等">
+      <div class="form-group">
+        <label for="remark" class="form-label">备注</label>
+        <input type="text" id="remark" name="remark" class="form-input" placeholder="例如：客户、来源、版本等">
       </div>
 
-      <div>
-        <label for="html_file" class="block text-sm font-medium text-gray-700 mb-1">
-          选择 HTML 文件 <span class="text-red-500">*</span>
+      <!-- 文件上传区域 -->
+      <div class="form-group">
+        <label class="form-label">
+          选择 HTML 文件 <span class="form-required">*</span>
         </label>
-        <input type="file" id="html_file" name="html_file" accept=".html,.htm" required
-               class="w-full text-sm text-gray-600 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-medium file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100">
-        <p class="mt-1 text-xs text-gray-400">仅支持 .html 或 .htm 文件，最大 16MB</p>
+        <div class="file-upload-area">
+          <div class="upload-placeholder">
+            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+              <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/>
+              <polyline points="17 8 12 3 7 8"/>
+              <line x1="12" y1="3" x2="12" y2="15"/>
+            </svg>
+            <div class="upload-text">
+              <span class="upload-click">点击选择文件</span>
+              <span class="upload-desc">或拖拽文件到此处</span>
+            </div>
+          </div>
+          <input type="file" id="html_file" name="html_file" accept=".html,.htm" required class="file-input-hidden">
+        </div>
+        <p class="form-hint">支持 .html / .htm 格式，最大 16MB</p>
       </div>
 
-      <div>
-        <label for="cover_file" class="block text-sm font-medium text-gray-700 mb-1">
-          作品封面图（可选）
-        </label>
-        <input type="file" id="cover_file" name="cover_file" accept=".png,.jpg,.jpeg,.gif,.webp"
-               class="w-full text-sm text-gray-600 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-medium file:bg-gray-50 file:text-gray-700 hover:file:bg-gray-100">
-        <p class="mt-1 text-xs text-gray-400">支持 png / jpg / jpeg / gif / webp，建议正方形图片</p>
+      <div class="form-group">
+        <label class="form-label">作品封面图</label>
+        <div class="file-upload-area cover-upload">
+          <div class="upload-placeholder">
+            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+              <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
+              <circle cx="8.5" cy="8.5" r="1.5"/>
+              <polyline points="21 15 16 10 5 21"/>
+            </svg>
+            <div class="upload-text">
+              <span class="upload-click">选择封面图片</span>
+              <span class="upload-desc">建议使用正方形图片</span>
+            </div>
+          </div>
+          <input type="file" id="cover_file" name="cover_file" accept=".png,.jpg,.jpeg,.gif,.webp" class="file-input-hidden">
+        </div>
+        <p class="form-hint">支持 png / jpg / jpeg / gif / webp 格式</p>
       </div>
 
-      <button type="submit"
-              class="w-full py-2.5 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 transition-colors">
-        上传作品
+      <button type="submit" class="btn btn-primary btn-block upload-submit">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+          <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/>
+          <polyline points="17 8 12 3 7 8"/>
+          <line x1="12" y1="3" x2="12" y2="15"/>
+        </svg>
+        发布作品
       </button>
     </form>
   </div>
 </div>
+
+<style>
+  .upload-card {
+    max-width: 560px;
+    margin: 0 auto;
+  }
+  
+  .upload-header {
+    text-align: center;
+    margin-bottom: 2rem;
+  }
+  
+  .upload-icon {
+    width: 64px;
+    height: 64px;
+    margin: 0 auto 1rem;
+    animation: float 3s ease-in-out infinite;
+  }
+  
+  .upload-title {
+    font-size: 1.5rem;
+    font-weight: 800;
+    background: linear-gradient(135deg, #222, #7c3aed);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+    margin-bottom: 0.375rem;
+  }
+  
+  .upload-subtitle {
+    color: #888;
+    font-size: 0.875rem;
+  }
+  
+  .upload-form {
+    margin-top: 1.5rem;
+  }
+  
+  .file-upload-area {
+    position: relative;
+    border: 2px dashed #e0e0e0;
+    border-radius: 1rem;
+    padding: 1.5rem;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    background: #fafafa;
+  }
+  .file-upload-area:hover {
+    border-color: #7c3aed;
+    background: linear-gradient(135deg, rgba(124, 58, 237, 0.05), rgba(236, 72, 153, 0.05));
+    transform: translateY(-2px);
+  }
+  .file-upload-area:hover svg {
+    color: #7c3aed;
+  }
+  
+  .upload-placeholder {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.75rem;
+    color: #aaa;
+  }
+  .upload-placeholder svg {
+    transition: color 0.3s ease;
+  }
+  
+  .upload-text {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+  }
+  .upload-click {
+    font-weight: 600;
+    color: #666;
+  }
+  .upload-desc {
+    font-size: 0.75rem;
+    color: #aaa;
+  }
+  
+  .file-input-hidden {
+    position: absolute;
+    inset: 0;
+    opacity: 0;
+    cursor: pointer;
+  }
+  
+  .cover-upload {
+    padding: 1.25rem;
+  }
+  
+  .upload-submit {
+    margin-top: 1.5rem;
+    font-size: 1rem;
+    padding: 0.875rem 1.25rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+  }
+</style>
 {% endblock %}

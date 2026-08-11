@@ -2,69 +2,251 @@
 {% block title %}编辑作品 - 个人作品集{% endblock %}
 
 {% block content %}
-<div class="max-w-lg mx-auto px-4 py-10">
-  <div class="mb-6">
-    <a href="{{ url_for('admin') }}" class="text-sm text-blue-600 hover:underline">← 返回管理后台</a>
-  </div>
+<div class="page-container-sm page-fade-in">
+  <a href="{{ url_for('admin') }}" class="back-link">
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-right:6px;">
+      <path d="M19 12H5M12 19l-7-7 7-7"/>
+    </svg>
+    返回管理后台
+  </a>
 
-  <div class="bg-white rounded-xl border border-gray-200 p-6 sm:p-8">
-    <h1 class="text-xl font-bold text-gray-900 mb-6">编辑作品</h1>
-
-    <form method="POST" enctype="multipart/form-data" class="space-y-5">
+  <div class="card card-body-lg edit-card animate-scale-in">
+    <div class="edit-header">
+      <div class="edit-icon">
+        <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/>
+          <path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/>
+        </svg>
+      </div>
       <div>
-        <label for="title" class="block text-sm font-medium text-gray-700 mb-1">
-          作品名称 <span class="text-red-500">*</span>
+        <h1 class="edit-title">编辑作品</h1>
+        <p class="edit-subtitle">更新作品信息和封面</p>
+      </div>
+    </div>
+
+    <form method="POST" enctype="multipart/form-data" class="edit-form">
+      <div class="form-group">
+        <label for="title" class="form-label">
+          作品名称 <span class="form-required">*</span>
         </label>
-        <input type="text" id="title" name="title" required value="{{ work.title }}"
-               class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+        <input type="text" id="title" name="title" required value="{{ work.title }}" class="form-input">
       </div>
 
-      <div>
-        <label for="description" class="block text-sm font-medium text-gray-700 mb-1">作品简介（可选）</label>
-        <textarea id="description" name="description" rows="3"
-                  class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  placeholder="简单介绍这个作品">{{ work.description or '' }}</textarea>
+      <div class="form-group">
+        <label for="description" class="form-label">作品简介</label>
+        <textarea id="description" name="description" rows="3" class="form-textarea" placeholder="简单介绍这个作品">{{ work.description or '' }}</textarea>
       </div>
 
-      <div>
-        <label for="remark" class="block text-sm font-medium text-gray-700 mb-1">备注（可选）</label>
-        <input type="text" id="remark" name="remark" value="{{ work.remark or '' }}"
-               class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-               placeholder="例如：客户、来源、版本等">
+      <div class="form-group">
+        <label for="remark" class="form-label">备注</label>
+        <input type="text" id="remark" name="remark" value="{{ work.remark or '' }}" class="form-input" placeholder="例如：客户、来源、版本等">
       </div>
 
-      <div>
-        <label class="block text-sm font-medium text-gray-700 mb-1">当前封面</label>
-        <div class="flex items-start gap-4">
+      <div class="form-group">
+        <label class="form-label">当前封面</label>
+        <div class="cover-preview-section">
           {% if work.cover %}
-          <img src="{{ url_for('static', filename='covers/' + work.cover) }}" alt="当前封面"
-               class="w-24 h-24 rounded-lg object-cover border border-gray-200">
-          <label class="flex items-center gap-2 text-sm text-gray-600 cursor-pointer mt-1">
-            <input type="checkbox" name="remove_cover" value="1" class="rounded text-blue-600">
-            删除此封面
-          </label>
+          <div class="cover-preview">
+            <img src="{{ url_for('static', filename='covers/' + work.cover) }}" alt="当前封面">
+            <label class="cover-remove">
+              <input type="checkbox" name="remove_cover" value="1">
+              <span>删除此封面</span>
+            </label>
+          </div>
           {% else %}
-          <div class="w-24 h-24 rounded-lg bg-gray-100 flex items-center justify-center border border-gray-200">
-            <span class="text-xs text-gray-400">无封面</span>
+          <div class="cover-empty">
+            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+              <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
+              <circle cx="8.5" cy="8.5" r="1.5"/>
+              <polyline points="21 15 16 10 5 21"/>
+            </svg>
+            <span>暂无封面</span>
           </div>
           {% endif %}
         </div>
       </div>
 
-      <div>
-        <label for="cover_file" class="block text-sm font-medium text-gray-700 mb-1">
-          {% if work.cover %}更换封面图{% else %}上传封面图{% endif %}
-        </label>
-        <input type="file" id="cover_file" name="cover_file" accept=".png,.jpg,.jpeg,.gif,.webp"
-               class="w-full text-sm text-gray-600 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-medium file:bg-gray-50 file:text-gray-700 hover:file:bg-gray-100">
-        <p class="mt-1 text-xs text-gray-400">支持 png / jpg / jpeg / gif / webp，建议正方形图片</p>
+      <div class="form-group">
+        <label class="form-label">{% if work.cover %}更换封面图{% else %}上传封面图{% endif %}</label>
+        <div class="file-upload-area">
+          <div class="upload-placeholder">
+            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+              <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
+              <circle cx="8.5" cy="8.5" r="1.5"/>
+              <polyline points="21 15 16 10 5 21"/>
+            </svg>
+            <div class="upload-text">
+              <span class="upload-click">点击选择新图片</span>
+              <span class="upload-desc">支持 png / jpg / jpeg / gif / webp</span>
+            </div>
+          </div>
+          <input type="file" id="cover_file" name="cover_file" accept=".png,.jpg,.jpeg,.gif,.webp" class="file-input-hidden">
+        </div>
       </div>
 
-      <button type="submit"
-              class="w-full py-2.5 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 transition-colors">
+      <button type="submit" class="btn btn-primary btn-block save-btn">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M19 21H5a2 2 0 01-2-2V5a2 2 0 012-2h11l5 5v11a2 2 0 01-2 2z"/>
+          <polyline points="17 21 17 13 7 13 7 21"/>
+          <polyline points="7 3 7 8 15 8"/>
+        </svg>
         保存修改
       </button>
     </form>
   </div>
 </div>
+
+<style>
+  .edit-card {
+    max-width: 560px;
+    margin: 0 auto;
+  }
+  
+  .edit-header {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+  }
+  
+  .edit-icon {
+    width: 48px;
+    height: 48px;
+    background: linear-gradient(135deg, #7c3aed, #ec4899);
+    border-radius: 0.875rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    box-shadow: 0 8px 20px rgba(124, 58, 237, 0.3);
+  }
+  
+  .edit-title {
+    font-size: 1.25rem;
+    font-weight: 800;
+    margin: 0;
+    background: linear-gradient(135deg, #222, #7c3aed);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+  
+  .edit-subtitle {
+    font-size: 0.875rem;
+    color: #888;
+    margin: 0;
+  }
+  
+  .edit-form {
+    margin-top: 1rem;
+  }
+  
+  .cover-preview-section {
+    margin-top: 0.5rem;
+  }
+  
+  .cover-preview {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+  }
+  
+  .cover-preview img {
+    width: 96px;
+    height: 96px;
+    border-radius: 0.75rem;
+    object-fit: cover;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  }
+  
+  .cover-remove {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    cursor: pointer;
+    font-size: 0.875rem;
+    color: #dc2626;
+    padding: 0.5rem 1rem;
+    border-radius: 0.5rem;
+    background: rgba(239, 68, 68, 0.1);
+    transition: all 0.2s ease;
+  }
+  .cover-remove:hover {
+    background: rgba(239, 68, 68, 0.2);
+  }
+  .cover-remove input[type="checkbox"] {
+    accent-color: #ec4899;
+  }
+  
+  .cover-empty {
+    width: 96px;
+    height: 96px;
+    background: #f5f5f5;
+    border-radius: 0.75rem;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    color: #aaa;
+    font-size: 0.75rem;
+    gap: 0.25rem;
+  }
+  
+  .file-upload-area {
+    position: relative;
+    border: 2px dashed #e0e0e0;
+    border-radius: 1rem;
+    padding: 1.25rem;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    background: #fafafa;
+  }
+  .file-upload-area:hover {
+    border-color: #7c3aed;
+    background: linear-gradient(135deg, rgba(124, 58, 237, 0.05), rgba(236, 72, 153, 0.05));
+    transform: translateY(-2px);
+  }
+  
+  .upload-placeholder {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.5rem;
+    color: #aaa;
+  }
+  .file-upload-area:hover svg {
+    color: #7c3aed;
+  }
+  
+  .upload-text {
+    display: flex;
+    flex-direction: column;
+    gap: 0.125rem;
+  }
+  .upload-click {
+    font-weight: 600;
+    color: #666;
+    font-size: 0.875rem;
+  }
+  .upload-desc {
+    font-size: 0.75rem;
+    color: #aaa;
+  }
+  
+  .file-input-hidden {
+    position: absolute;
+    inset: 0;
+    opacity: 0;
+    cursor: pointer;
+  }
+  
+  .save-btn {
+    margin-top: 1.5rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+  }
+</style>
 {% endblock %}

@@ -2,31 +2,206 @@
 {% block title %}{{ work.title }} - 个人作品集{% endblock %}
 
 {% block content %}
-<div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-  <div class="mb-6">
-    <a href="{{ url_for('works_list') }}" class="text-sm text-blue-600 hover:underline">← 返回作品列表</a>
-  </div>
+<div class="page-container page-fade-in">
+  {% if user_role == 'admin' %}
+  <a href="{{ url_for('admin') }}" class="back-link">
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-right:6px;">
+      <path d="M19 12H5M12 19l-7-7 7-7"/>
+    </svg>
+    返回管理后台
+  </a>
+  {% else %}
+  <a href="{{ url_for('works_list') }}" class="back-link">
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-right:6px;">
+      <path d="M19 12H5M12 19l-7-7 7-7"/>
+    </svg>
+    返回作品列表
+  </a>
+  {% endif %}
 
-  <div class="bg-white rounded-xl border border-gray-200 p-6 mb-6">
-    <h1 class="text-2xl font-bold text-gray-900">{{ work.title }}</h1>
-    {% if work.description %}
-    <p class="mt-2 text-gray-600">{{ work.description }}</p>
-    {% endif %}
-    <p class="mt-3 text-sm text-gray-400">上传时间：{{ work.created_at }}</p>
-    <div class="mt-4 flex gap-3">
-      <a href="{{ url_for('preview', work_id=work.id) }}" target="_blank"
-         class="inline-flex items-center px-4 py-2 bg-blue-600 text-white text-sm rounded-lg hover:bg-blue-700">
-        新窗口打开完整作品
-      </a>
+  <div class="work-detail-layout">
+    <!-- 左侧信息卡片 -->
+    <div class="work-info-card animate-slide-left">
+      <div class="work-info-badge">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/>
+          <polyline points="14 2 14 8 20 8"/>
+        </svg>
+      </div>
+      <h1 class="work-info-title">{{ work.title }}</h1>
+      
+      {% if work.description %}
+      <p class="work-info-desc">{{ work.description }}</p>
+      {% endif %}
+      
+      <div class="work-info-meta-list">
+        <div class="meta-item">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="12" cy="12" r="10"/>
+            <polyline points="12 6 12 12 16 14"/>
+          </svg>
+          <span>{{ work.created_at }}</span>
+        </div>
+        {% if work.remark %}
+        <div class="meta-item">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/>
+          </svg>
+          <span>{{ work.remark }}</span>
+        </div>
+        {% endif %}
+      </div>
+      
+      <div class="work-actions">
+        <a href="{{ url_for('preview', work_id=work.id) }}" target="_blank" class="btn btn-primary action-main">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6"/>
+            <polyline points="15 3 21 3 21 9"/>
+            <line x1="10" y1="14" x2="21" y2="3"/>
+          </svg>
+          新窗口打开
+        </a>
+        <a href="{{ url_for('preview', work_id=work.id) }}" target="_blank" class="btn btn-secondary action-secondary">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+            <circle cx="12" cy="12" r="3"/>
+          </svg>
+          预览作品
+        </a>
+      </div>
     </div>
-  </div>
 
-  <!-- 作品预览（iframe） -->
-  <div class="bg-white rounded-xl border border-gray-200 p-2">
-    <p class="text-xs text-gray-400 px-2 py-1">作品预览（下方为嵌入的 HTML 内容）</p>
-    <div class="iframe-container">
-      <iframe src="{{ url_for('preview', work_id=work.id) }}" sandbox="allow-scripts allow-same-origin allow-forms" title="{{ work.title }}"></iframe>
+    <!-- 右侧预览卡片 -->
+    <div class="preview-card animate-slide-right">
+      <div class="preview-header">
+        <div class="preview-title">
+          <span class="preview-dot"></span>
+          作品预览
+        </div>
+        <span class="preview-hint">下方为嵌入的 HTML 内容</span>
+      </div>
+      <div class="iframe-container">
+        <iframe src="{{ url_for('preview', work_id=work.id) }}" sandbox="allow-scripts allow-same-origin allow-forms" title="{{ work.title }}"></iframe>
+      </div>
     </div>
   </div>
 </div>
+
+<style>
+  .work-detail-layout {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 1.5rem;
+  }
+  
+  @media (min-width: 1024px) {
+    .work-detail-layout {
+      grid-template-columns: 360px 1fr;
+      gap: 2rem;
+    }
+  }
+  
+  .work-info-card {
+    position: sticky;
+    top: 80px;
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+  }
+  
+  .work-info-badge {
+    width: 48px;
+    height: 48px;
+    background: linear-gradient(135deg, #7c3aed, #ec4899);
+    border-radius: 0.875rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    box-shadow: 0 8px 20px rgba(124, 58, 237, 0.3);
+  }
+  
+  .work-info-desc {
+    color: #555;
+    line-height: 1.7;
+    font-size: 0.9375rem;
+  }
+  
+  .work-info-meta-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+    padding: 1rem 0;
+    border-top: 1px solid #f0f0f0;
+    border-bottom: 1px solid #f0f0f0;
+  }
+  
+  .meta-item {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    color: #666;
+    font-size: 0.875rem;
+  }
+  .meta-item svg { color: #7c3aed; }
+  
+  .work-actions {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+  }
+  
+  .action-main, .action-secondary {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+  }
+  
+  .preview-card {
+    padding: 1.5rem;
+  }
+  
+  .preview-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 1rem;
+  }
+  
+  .preview-title {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-weight: 600;
+    color: #333;
+  }
+  
+  .preview-dot {
+    width: 8px;
+    height: 8px;
+    background: linear-gradient(135deg, #7c3aed, #ec4899);
+    border-radius: 50%;
+    animation: pulse 2s ease-in-out infinite;
+  }
+  
+  .preview-hint {
+    font-size: 0.75rem;
+    color: #888;
+  }
+  
+  .iframe-container {
+    border-radius: 1rem;
+    overflow: hidden;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+    background: #fff;
+  }
+  
+  @media (max-width: 1023px) {
+    .work-info-card {
+      position: relative;
+      top: 0;
+    }
+  }
+</style>
 {% endblock %}

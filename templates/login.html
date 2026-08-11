@@ -2,39 +2,135 @@
 {% block title %}登录 - 个人作品集{% endblock %}
 
 {% block content %}
-<div class="max-w-md mx-auto px-4 py-16">
-  <div class="bg-white rounded-xl border border-gray-200 shadow-sm p-8">
-    <h1 class="text-xl font-bold text-gray-900 text-center mb-2">登录</h1>
-    <p class="text-center text-sm text-gray-500 mb-6">管理员账号可上传作品，游客仅可浏览</p>
-    <form method="POST" action="{{ url_for('login') }}" class="space-y-5">
-      <div>
-        <label for="username" class="block text-sm font-medium text-gray-700 mb-1">账号</label>
-        <input type="text" id="username" name="username" required
-               class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-               placeholder="请输入账号">
+<div class="page-container-sm page-fade-in">
+  <div class="login-card card card-body-lg animate-scale-in">
+    <!-- 顶部装饰 -->
+    <div class="login-header">
+      <div class="login-icon">
+        <svg width="48" height="48" viewBox="0 0 48 48" fill="none">
+          <rect x="4" y="4" width="40" height="40" rx="12" fill="url(#loginGrad)"/>
+          <path d="M24 14L30 20L24 26L18 20L24 14Z" fill="white" opacity="0.9"/>
+          <path d="M16 26L22 32L28 26" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" opacity="0.9"/>
+          <defs>
+            <linearGradient id="loginGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+              <stop offset="0%" stop-color="#7c3aed"/>
+              <stop offset="50%" stop-color="#ec4899"/>
+              <stop offset="100%" stop-color="#22d3ee"/>
+            </linearGradient>
+          </defs>
+        </svg>
       </div>
-      <div>
-        <label for="password" class="block text-sm font-medium text-gray-700 mb-1">密码</label>
-        <input type="password" id="password" name="password" required
-               class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-               placeholder="请输入密码">
+      <h1 class="page-title text-center" style="font-size:1.75rem;">欢迎回来</h1>
+      <p class="page-subtitle text-center">登录以探索精彩作品集</p>
+    </div>
+
+    <form method="POST" action="{{ url_for('login') }}" class="login-form">
+      <div class="form-group">
+        <label for="username" class="form-label">账号</label>
+        <div class="input-wrapper">
+          <svg class="input-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+            <circle cx="12" cy="7" r="4"/>
+          </svg>
+          <input type="text" id="username" name="username" required class="form-input with-icon" placeholder="请输入账号">
+        </div>
       </div>
-      <button type="submit"
-              class="w-full py-2.5 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 transition-colors">
-        管理员登录
+      <div class="form-group">
+        <label for="password" class="form-label">密码</label>
+        <div class="input-wrapper">
+          <svg class="input-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
+            <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+          </svg>
+          <input type="password" id="password" name="password" required class="form-input with-icon" placeholder="请输入密码">
+        </div>
+      </div>
+      <button type="submit" class="btn btn-primary btn-block login-btn">
+        <span>管理员登录</span>
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="margin-left:8px;">
+          <path d="M5 12h14M12 5l7 7-7 7"/>
+        </svg>
       </button>
     </form>
 
-    <div class="relative my-6">
-      <div class="absolute inset-0 flex items-center"><div class="w-full border-t border-gray-200"></div></div>
-      <div class="relative flex justify-center"><span class="bg-white px-3 text-xs text-gray-400">或者</span></div>
-    </div>
+    <div class="divider"><span>或</span></div>
 
-    <a href="{{ url_for('guest_login') }}"
-       class="block w-full py-2.5 bg-gray-100 text-gray-700 font-medium rounded-lg hover:bg-gray-200 transition-colors text-center">
-      游客登录
+    <a href="{{ url_for('guest_login') }}" class="btn btn-secondary btn-block guest-btn">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-right:8px;">
+        <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
+        <circle cx="9" cy="7" r="4"/>
+        <path d="M23 21v-2a4 4 0 0 0-3-3.87"/>
+        <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+      </svg>
+      游客浏览
     </a>
-    <p class="mt-4 text-center text-xs text-gray-400">游客可浏览所有作品，但不能上传</p>
+    <p class="form-hint text-center" style="margin-top:0.75rem;">游客可浏览所有作品，但不能上传</p>
   </div>
 </div>
+
+<style>
+  .login-card {
+    max-width: 440px;
+    margin: 0 auto;
+  }
+  .login-header {
+    text-align: center;
+    margin-bottom: 2rem;
+  }
+  .login-icon {
+    width: 64px;
+    height: 64px;
+    margin: 0 auto 1rem;
+    animation: float 3s ease-in-out infinite;
+  }
+  .login-form { margin-top: 1.5rem; }
+  
+  .input-wrapper {
+    position: relative;
+    display: flex;
+    align-items: center;
+  }
+  .input-icon {
+    position: absolute;
+    left: 1rem;
+    color: #aaa;
+    pointer-events: none;
+    transition: color 0.2s ease;
+  }
+  .form-input.with-icon {
+    padding-left: 3rem !important;
+  }
+  .input-wrapper:focus-within .input-icon {
+    color: #7c3aed;
+  }
+  
+  .login-btn {
+    margin-top: 1rem;
+    font-size: 1rem;
+    padding: 0.875rem 1.25rem;
+  }
+  .login-btn span { font-weight: 600; }
+  
+  .guest-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 500;
+  }
+  
+  /* 登录卡片装饰 */
+  .login-card::before {
+    content: '';
+    position: absolute;
+    top: -1px;
+    left: -1px;
+    right: -1px;
+    bottom: -1px;
+    background: linear-gradient(135deg, #7c3aed, #ec4899, #22d3ee);
+    border-radius: 1.5rem;
+    z-index: -1;
+    opacity: 0.3;
+    filter: blur(20px);
+  }
+</style>
 {% endblock %}
