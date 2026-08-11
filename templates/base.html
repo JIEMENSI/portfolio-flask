@@ -29,7 +29,17 @@
           <a href="{{ url_for('index') }}" class="text-lg font-semibold text-gray-900 hover:text-gray-600 tracking-tight">作品广场</a>
           {% if user_role == 'admin' %}
           <div class="flex items-center gap-2 pl-6 border-l border-gray-200">
-            <img src="{{ url_for('static', filename='images/avatar.png') }}" alt="头像" class="w-8 h-8 rounded-full object-cover border border-gray-200 shadow-sm">
+            <form id="avatarForm" method="post" action="{{ url_for('upload_avatar') }}" enctype="multipart/form-data" style="display:none;">
+              <input type="file" name="avatar_file" id="avatarFile" accept=".png,.jpg,.jpeg,.gif,.webp">
+            </form>
+            <img id="navAvatar" src="{{ url_for('static', filename=avatar_url) }}?v={{ range(100000) | random }}" alt="头像"
+                 class="w-8 h-8 rounded-full object-cover border border-gray-200 shadow-sm cursor-pointer hover:opacity-80 transition-opacity"
+                 title="点击更换头像" onclick="document.getElementById('avatarFile').click();">
+            <span class="text-sm text-gray-600">{{ display_name }}</span>
+          </div>
+          {% elif user_role == 'guest' %}
+          <div class="flex items-center gap-2 pl-6 border-l border-gray-200">
+            <img src="{{ url_for('static', filename=avatar_url) }}" alt="头像" class="w-8 h-8 rounded-full object-cover border border-gray-200 shadow-sm">
             <span class="text-sm text-gray-600">{{ display_name }}</span>
           </div>
           {% endif %}
@@ -87,6 +97,17 @@
         setTimeout(function() { el.remove(); }, 300);
       }, 2000);
     });
+
+    // 头像选完自动上传
+    (function(){
+      var input = document.getElementById('avatarFile');
+      if(!input) return;
+      input.addEventListener('change', function(){
+        if(input.files && input.files.length > 0){
+          document.getElementById('avatarForm').submit();
+        }
+      });
+    })();
   </script>
 </body>
 </html>

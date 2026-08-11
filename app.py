@@ -13,18 +13,25 @@ app = Flask(__name__)
 app.secret_key = os.environ.get("SECRET_KEY", "portfolio-secret-key-change-in-production-2026")
 app.config["UPLOAD_FOLDER"] = os.path.join(BASE_DIR, "static", "uploads")
 app.config["COVER_FOLDER"] = os.path.join(BASE_DIR, "static", "covers")
+app.config["AVATAR_FOLDER"] = os.path.join(BASE_DIR, "static", "avatars")
 app.config["MAX_CONTENT_LENGTH"] = 16 * 1024 * 1024  # 16MB max
 ALLOWED_COVER_EXT = {".png", ".jpg", ".jpeg", ".gif", ".webp"}
+ALLOWED_AVATAR_EXT = {".png", ".jpg", ".jpeg", ".gif", ".webp"}
 
-# 管理员账号
-ADMIN_USERNAME = "17671883601"
-ADMIN_PASSWORD = "zxcvbnm123"
+# 管理员账号（支持多个）
+ADMIN_ACCOUNTS = [
+    {"username": "17671883601", "password": "zxcvbnm123"},
+    {"username": "13797885246", "password": "wahsmmyj"},
+]
 
 DATA_FILE = os.path.join(BASE_DIR, "data", "works.json")
+AVATARS_FILE = os.path.join(BASE_DIR, "data", "avatars.json")
+DEFAULT_AVATAR = "images/avatar.png"  # 相对 static 目录
 
 # 确保目录存在
 os.makedirs(app.config["UPLOAD_FOLDER"], exist_ok=True)
 os.makedirs(app.config["COVER_FOLDER"], exist_ok=True)
+os.makedirs(app.config["AVATAR_FOLDER"], exist_ok=True)
 os.makedirs(os.path.join(BASE_DIR, "data"), exist_ok=True)
 os.makedirs(os.path.join(BASE_DIR, "static", "css"), exist_ok=True)
 
@@ -40,6 +47,30 @@ def load_works():
 def save_works(works):
     with open(DATA_FILE, "w", encoding="utf-8") as f:
         json.dump(works, f, ensure_ascii=False, indent=2)
+
+def load_avatars():
+    """加载头像映射 {username: avatar_filename}"""
+    if not os.path.exists(AVATARS_FILE):
+        return {}
+    try:
+        with open(AVATARS_FILE, "r", encoding="utf-8") as f:
+            return json.load(f)
+    except Exception:
+        return {}
+
+def save_avatars(avatars):
+    with open(AVATARS_FILE, "w", encoding="utf-8") as f:
+        json.dump(avatars, f, ensure_ascii=False, indent=2)
+
+def get_avatar_url(username):
+    """获取账号头像URL（相对 static 路径）；未自定义则返回默认头像"""
+    if not username:
+        return DEFAULT_AVATAR
+    avatars = load_avatars()
+    fname = avatars.get(username)
+    if fname:
+        return f"avatars/{fname}"
+    return DEFAULT_AVATAR
 
 def admin_required(f):
     @wraps(f)
@@ -63,10 +94,19 @@ def inject_user():
     """全局注入用户信息给模板"""
     role = session.get("role")
     if role == "admin":
-        return {"user_role": "admin", "display_name": mask_username(session.get("username", ""))}
+        username = session.get("username", "")
+        return {
+            "user_role": "admin",
+            "display_name": mask_username(username),
+            "avatar_url": get_avatar_url(username),
+        }
     if role == "guest":
-        return {"user_role": "guest", "display_name": "游客"}
-    return {"user_role": None, "display_name": None}
+        return {
+            "user_role": "guest",
+            "display_name": "游客114514",
+            "avatar_url": DEFAULT_AVATAR,
+        }
+    return {"user_role": None, "display_name": None, "avatar_url": None}
 
 @app.route("/")
 def index():
@@ -105,7 +145,8 @@ def login():
     if request.method == "POST":
         username = request.form.get("username", "").strip()
         password = request.form.get("password", "")
-        if username == ADMIN_USERNAME and password == ADMIN_PASSWORD:
+        matched = next((a for a in ADMIN_ACCOUNTS if a["username"] == username and a["password"] == password), None)
+        if matched:
             session["role"] = "admin"
             session["username"] = username
             flash("管理员登录成功", "success")
@@ -117,7 +158,7 @@ def login():
 @app.route("/guest_login")
 def guest_login():
     session["role"] = "guest"
-    session["username"] = "游客"
+    session["username"] = "游客114514"
     flash("已以游客身份进入，可浏览作品（不能上传）", "success")
     return redirect(url_for("index"))
 
@@ -126,6 +167,45 @@ def logout():
     session.clear()
     flash("已退出登录", "success")
     return redirect(url_for("login"))
+
+@app.route("/upload_avatar", methods=["POST"])
+@admin_required
+def upload_avatar():
+    """管理员上传自定义头像"""
+    file = request.files.get("avatar_file")
+    if not file or file.filename == "":
+        flash("请选择头像图片", "error")
+        return redirect(request.referrer or url_for("admin"))
+
+    original = file.filename
+    ext = os.path.splitext(original)[1].lower()
+    if ext not in ALLOWED_AVATAR_EXT:
+        flash("头像格式不支持（仅 png/jpg/jpeg/gif/webp）", "error")
+        return redirect(request.referrer or url_for("admin"))
+
+    username = session.get("username", "")
+    avatars = load_avatars()
+
+    # 删除旧头像文件（非默认）
+    old_fname = avatars.get(username)
+    if old_fname:
+        old_path = os.path.join(app.config["AVATAR_FOLDER"], old_fname)
+        if os.path.exists(old_path):
+            try:
+                os.remove(old_path)
+            except Exception:
+                pass
+
+    # 保存新头像
+    new_fname = f"{uuid.uuid4().hex[:12]}{ext}"
+    dest = os.path.join(app.config["AVATAR_FOLDER"], new_fname)
+    file.save(dest)
+
+    avatars[username] = new_fname
+    save_avatars(avatars)
+
+    flash("头像更新成功", "success")
+    return redirect(request.referrer or url_for("admin"))
 
 @app.route("/admin")
 @admin_required
