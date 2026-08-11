@@ -63,7 +63,7 @@
 
   <!-- 导航栏 -->
   <nav class="bg-white/70 backdrop-blur-sm nav-bar sticky top-0 z-50">
-    <div class="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
+    <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
       <div class="flex justify-between h-14 items-center">
         <div class="flex items-center gap-6">
           <a href="{{ url_for('index') }}" class="nav-brand">作品广场</a>
@@ -84,6 +84,20 @@
           </div>
           {% endif %}
         </div>
+        
+        <!-- 中间区域：运行时间 + 访问人数 -->
+        <div class="nav-center">
+          <div class="uptime-counter">
+            <span class="uptime-label">🚀 本站已运行</span>
+            <span class="uptime-value"><span id="uptime-days">0</span>天<span id="uptime-hours">0</span>时<span id="uptime-minutes">0</span>分<span id="uptime-seconds">0</span>秒</span>
+          </div>
+          <div class="visitor-counter">
+            <span class="visitor-icon">👁</span>
+            <span class="visitor-value">375</span>
+            <span class="visitor-label">位访客</span>
+          </div>
+        </div>
+        
         <div class="flex items-center gap-4">
           {% if session.get('role') == 'admin' %}
             <a href="{{ url_for('admin') }}" class="nav-text-btn">管理后台</a>
@@ -284,6 +298,61 @@
           card.style.transform = '';
         });
       });
+    })();
+
+    // 运行时间计数器
+    (function(){
+      var daysEl = document.getElementById('uptime-days');
+      var hoursEl = document.getElementById('uptime-hours');
+      var minutesEl = document.getElementById('uptime-minutes');
+      var secondsEl = document.getElementById('uptime-seconds');
+      
+      if (!daysEl) return;
+      
+      var serverStartTime = null;
+      var clientStartTimestamp = Date.now();
+      
+      function pad(n) {
+        return n < 10 ? '0' + n : '' + n;
+      }
+      
+      function calculateUptime(totalSeconds) {
+        var days = Math.floor(totalSeconds / 86400);
+        var hours = Math.floor((totalSeconds % 86400) / 3600);
+        var minutes = Math.floor((totalSeconds % 3600) / 60);
+        var seconds = Math.floor(totalSeconds % 60);
+        return { days: days, hours: hours, minutes: minutes, seconds: seconds };
+      }
+      
+      function updateDisplay(uptime) {
+        daysEl.textContent = uptime.days;
+        hoursEl.textContent = pad(uptime.hours);
+        minutesEl.textContent = pad(uptime.minutes);
+        secondsEl.textContent = pad(uptime.seconds);
+      }
+      
+      // 从服务器获取启动时间
+      fetch('/api/uptime')
+        .then(function(res) { return res.json(); })
+        .then(function(data) {
+          // 保存服务器启动的相对时间
+          serverStartTime = data.total_seconds;
+          updateDisplay(data);
+          
+          // 每秒更新
+          setInterval(function() {
+            serverStartTime++;
+            updateDisplay(calculateUptime(serverStartTime));
+          }, 1000);
+        })
+        .catch(function() {
+          // 如果 API 不可用，使用客户端时间
+          var localSeconds = 0;
+          setInterval(function() {
+            localSeconds += 1;
+            updateDisplay(calculateUptime(localSeconds));
+          }, 1000);
+        });
     })();
 
     // 按钮涟漪效果

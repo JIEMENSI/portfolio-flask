@@ -106,6 +106,125 @@ body {
   -webkit-backdrop-filter: blur(20px);
   border-bottom: none !important;
 }
+.nav-bar > div > div {
+  display: grid !important;
+  grid-template-columns: 1fr auto 1fr;
+  align-items: center;
+  gap: 1rem;
+}
+.nav-bar > div > div > div:first-child {
+  justify-self: start;
+}
+.nav-bar > div > div > div:last-child {
+  justify-self: end;
+}
+
+/* 中间区域容器 */
+.nav-center {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  justify-self: start;
+  padding-left: 1rem;
+}
+
+/* 运行时间计数器 */
+.uptime-counter {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.375rem 1rem;
+  background: linear-gradient(135deg, rgba(124, 58, 237, 0.08), rgba(236, 72, 153, 0.08));
+  border-radius: 9999px;
+  font-size: 0.8125rem;
+  font-weight: 500;
+  color: #555;
+  white-space: nowrap;
+  transition: all 0.3s ease;
+  border: 1px solid rgba(124, 58, 237, 0.15);
+}
+.uptime-counter:hover {
+  background: linear-gradient(135deg, rgba(124, 58, 237, 0.12), rgba(236, 72, 153, 0.12));
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(124, 58, 237, 0.15);
+}
+.uptime-label {
+  color: #7c3aed;
+  font-weight: 600;
+}
+.uptime-value {
+  display: inline-flex;
+  align-items: center;
+  gap: 1px;
+  font-variant-numeric: tabular-nums;
+}
+.uptime-value span {
+  background: linear-gradient(135deg, #7c3aed, #ec4899);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  font-weight: 700;
+  min-width: 1.2em;
+  display: inline-block;
+  text-align: center;
+}
+
+/* 访问人数计数器 */
+.visitor-counter {
+  display: flex;
+  align-items: center;
+  gap: 0.375rem;
+  padding: 0.375rem 0.875rem;
+  background: linear-gradient(135deg, rgba(34, 211, 238, 0.1), rgba(124, 58, 237, 0.1));
+  border-radius: 9999px;
+  font-size: 0.8125rem;
+  font-weight: 500;
+  color: #555;
+  white-space: nowrap;
+  transition: all 0.3s ease;
+  border: 1px solid rgba(34, 211, 238, 0.2);
+}
+.visitor-counter:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(34, 211, 238, 0.15);
+}
+.visitor-icon {
+  font-size: 0.9375rem;
+}
+.visitor-value {
+  background: linear-gradient(135deg, #22d3ee, #7c3aed);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+.visitor-label {
+  color: #666;
+  font-size: 0.75rem;
+}
+
+@media (max-width: 768px) {
+  .uptime-counter {
+    font-size: 0.75rem;
+    padding: 0.25rem 0.75rem;
+  }
+  .uptime-label {
+    display: none;
+  }
+  .visitor-counter {
+    font-size: 0.75rem;
+    padding: 0.25rem 0.625rem;
+  }
+  .visitor-label {
+    display: none;
+  }
+  .nav-center {
+    gap: 0.5rem;
+    padding-left: 0.5rem;
+  }
+}
+
 .nav-bar::after {
   content: '';
   position: absolute;
@@ -242,14 +361,17 @@ body {
 .page-title {
   font-size: 2.5rem;
   font-weight: 800;
-  background: linear-gradient(135deg, #222 0%, #7c3aed 50%, #ec4899 100%);
+  color: #222;
+  letter-spacing: -0.03em;
+  line-height: 1.2;
+}
+.page-title .title-highlight {
+  background: linear-gradient(135deg, #7c3aed, #ec4899);
   background-size: 200% 200%;
   -webkit-background-clip: text;
   background-clip: text;
   -webkit-text-fill-color: transparent;
-  letter-spacing: -0.03em;
-  line-height: 1.2;
-  animation: gradientShift 5s ease infinite;
+  animation: gradientShift 3s ease infinite;
 }
 .page-subtitle {
   margin-top: 0.75rem;
@@ -776,6 +898,12 @@ body {
 .animate-on-scroll.visible {
   opacity: 1;
   transform: translateY(0);
+}
+
+/* 确保作品卡片始终可见，不受动画类影响 */
+.work-card, .card, .page-header, .work-info-card, .preview-card,
+.animate-slide-left, .animate-slide-right, .animate-scale-in {
+  opacity: 1 !important;
 }
 
 .animate-slide-left {

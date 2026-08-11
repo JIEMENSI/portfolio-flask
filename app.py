@@ -1,10 +1,14 @@
-from flask import Flask, render_template, request, redirect, url_for, session, flash, send_from_directory, abort
+from flask import Flask, render_template, request, redirect, url_for, session, flash, send_from_directory, abort, jsonify
 import os
 import json
 import uuid
+import time
 from datetime import datetime
 from functools import wraps
 from werkzeug.utils import secure_filename
+
+# 记录服务器启动时间
+SERVER_START_TIME = time.time()
 
 # 获取项目根目录（兼容不同运行方式）
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -139,7 +143,13 @@ def preview(work_id):
     filename = work.get("filename")
     if not filename:
         abort(404)
-    return send_from_directory(app.config["UPLOAD_FOLDER"], filename, mimetype="text/html")
+    filepath = os.path.join(app.config["UPLOAD_FOLDER"], filename)
+    if not os.path.exists(filepath):
+        abort(404)
+    # 读取文件内容并返回，确保 Content-Type 为 text/html
+    with open(filepath, "r", encoding="utf-8") as f:
+        html_content = f.read()
+    return html_content, 200, {"Content-Type": "text/html; charset=utf-8"}
 
 @app.route("/login", methods=["GET", "POST"])
 def login():
@@ -369,6 +379,24 @@ def delete_work(work_id):
     else:
         flash("作品不存在", "error")
     return redirect(url_for("admin"))
+
+@app.route("/api/uptime")
+def get_uptime():
+    """获取服务器运行时间"""
+    uptime_seconds = time.time() - SERVER_START_TIME
+    
+    days = int(uptime_seconds // 86400)
+    hours = int((uptime_seconds % 86400) // 3600)
+    minutes = int((uptime_seconds % 3600) // 60)
+    seconds = int(uptime_seconds % 60)
+    
+    return jsonify({
+        "days": days,
+        "hours": hours,
+        "minutes": minutes,
+        "seconds": seconds,
+        "total_seconds": int(uptime_seconds)
+    })
 
 @app.errorhandler(404)
 def not_found(e):
