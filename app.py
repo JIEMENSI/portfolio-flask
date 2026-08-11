@@ -96,7 +96,7 @@ def preview(work_id):
     filename = work.get("filename")
     if not filename:
         abort(404)
-    return send_from_directory(app.config["UPLOAD_FOLDER"], filename)
+    return send_from_directory(app.config["UPLOAD_FOLDER"], filename, mimetype="text/html")
 
 @app.route("/login", methods=["GET", "POST"])
 def login():
