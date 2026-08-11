@@ -901,35 +901,30 @@ body {
 }
 
 /* 确保作品卡片始终可见，不受动画类影响 */
-.work-card, .card, .page-header, .work-info-card, .preview-card,
-.animate-slide-left, .animate-slide-right, .animate-scale-in {
+.work-card, .card, .page-header, .work-info-card, .preview-card {
   opacity: 1 !important;
 }
 
-.animate-slide-left {
-  opacity: 0;
-  transform: translateX(-40px);
-  transition: opacity 0.7s ease, transform 0.7s var(--transition-bounce);
-}
-.animate-slide-left.visible {
-  opacity: 1;
-  transform: translateX(0);
+/* 修复动画类默认可见 */
+.animate-slide-left, .animate-slide-right, .animate-scale-in {
+  opacity: 1 !important;
+  transform: none !important;
 }
 
-.animate-slide-right {
-  opacity: 0;
-  transform: translateX(40px);
-  transition: opacity 0.7s ease, transform 0.7s var(--transition-bounce);
-}
-.animate-slide-right.visible {
-  opacity: 1;
-  transform: translateX(0);
+/* 保留动画效果的类在需要时的样式（但默认显示） */
+.animate-on-scroll {
+  opacity: 1 !important;
+  transform: none !important;
 }
 
 .animate-scale-in {
-  opacity: 0;
-  transform: scale(0.85);
-  transition: opacity 0.6s ease, transform 0.6s var(--transition-bounce);
+  opacity: 1 !important;
+  transform: none !important;
+}
+
+/* 动画过渡效果 */
+.work-card, .card, .page-header, .work-info-card, .preview-card {
+  transition: opacity 0.7s ease, transform 0.7s var(--transition-bounce);
 }
 .animate-scale-in.visible {
   opacity: 1;
