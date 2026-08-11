@@ -70,10 +70,7 @@ def inject_user():
 
 @app.route("/")
 def index():
-    works = load_works()
-    # 取最近 6 个作为精选
-    featured = sorted(works, key=lambda x: x.get("created_at", ""), reverse=True)[:6]
-    return render_template("index.html", works=featured, total=len(works))
+    return redirect(url_for("login"))
 
 @app.route("/works")
 def works_list():
@@ -154,11 +151,13 @@ def upload():
             flash("请选择 HTML 文件", "error")
             return redirect(url_for("upload"))
 
-        # 只允许 html / htm
-        filename = secure_filename(file.filename)
-        if not (filename.lower().endswith(".html") or filename.lower().endswith(".htm")):
+        # 先校验原始文件名的扩展名（secure_filename可能剥离扩展名）
+        original_filename = file.filename
+        if not (original_filename.lower().endswith(".html") or original_filename.lower().endswith(".htm")):
             flash("只支持上传 .html 或 .htm 文件", "error")
             return redirect(url_for("upload"))
+
+        filename = secure_filename(original_filename)
 
         # 生成唯一文件名
         work_id = str(uuid.uuid4())[:8]
