@@ -4,6 +4,8 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>{% block title %}个人作品集{% endblock %}</title>
+  <link rel="icon" type="image/svg+xml" href="{{ url_for('static', filename='images/favicon.svg') }}">
+  <link rel="shortcut icon" href="{{ url_for('static', filename='images/favicon.svg') }}">
   <script src="https://cdn.tailwindcss.com"></script>
   <style>
     * { box-sizing: border-box; }
@@ -66,7 +68,9 @@
     <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
       <div class="flex justify-between h-14 items-center">
         <div class="flex items-center gap-6">
+          {% if request.endpoint != 'login' %}
           <a href="{{ url_for('index') }}" class="nav-brand">作品广场</a>
+          {% endif %}
           {% if user_role == 'admin' %}
           <div class="flex items-center gap-2 pl-6 border-l border-gray-200">
             <form id="avatarForm" method="post" action="{{ url_for('upload_avatar') }}" enctype="multipart/form-data" style="display:none;">
