@@ -23,10 +23,9 @@
 </head>
 <body class="text-gray-800 min-h-screen flex flex-col">
   <!-- 视差装饰背景 blob -->
-  <div class="parallax-blob parallax-blob-1" data-speed="0.03"></div>
-  <div class="parallax-blob parallax-blob-2" data-speed="0.06"></div>
-  <div class="parallax-blob parallax-blob-3" data-speed="0.09"></div>
-  <div class="parallax-blob parallax-blob-4" data-speed="0.12"></div>
+  <div class="parallax-blob parallax-blob-1"></div>
+  <div class="parallax-blob parallax-blob-2"></div>
+  <div class="parallax-blob parallax-blob-3"></div>
   
   <!-- 浮动装饰元素 -->
   <div class="floating-shape" style="top: 15%; right: 5%;">
@@ -165,41 +164,42 @@
       });
     })();
 
-    // 视差滚动效果
+    // 视差滚动效果 - 性能优化：节流 mousemove，合并滚动监听
     (function(){
-      var blobs = document.querySelectorAll('.parallax-blob');
-      var shapes = document.querySelectorAll('.floating-shape');
+      var nav = document.querySelector('.nav-bar');
       var ticking = false;
       var mouseX = 0, mouseY = 0;
       var targetX = 0, targetY = 0;
+      var lastMouseMoveTime = 0;
 
       document.addEventListener('mousemove', function(e) {
+        var now = Date.now();
+        if (now - lastMouseMoveTime < 50) return; // 节流 50ms
+        lastMouseMoveTime = now;
         mouseX = (e.clientX / window.innerWidth - 0.5) * 2;
         mouseY = (e.clientY / window.innerHeight - 0.5) * 2;
-      });
+        if (!ticking) {
+          window.requestAnimationFrame(updateParallax);
+          ticking = true;
+        }
+      }, { passive: true });
 
       function updateParallax() {
         var scrollY = window.pageYOffset;
-        
-        // 平滑鼠标跟随
         targetX += (mouseX - targetX) * 0.05;
         targetY += (mouseY - targetY) * 0.05;
 
-        blobs.forEach(function(blob) {
-          var speed = parseFloat(blob.dataset.speed) || 0.05;
-          var scrollOffset = scrollY * speed;
-          var mouseOffsetX = targetX * 20 * speed;
-          var mouseOffsetY = targetY * 20 * speed;
-          blob.style.transform = 'translate(' + mouseOffsetX + 'px, ' + (scrollOffset + mouseOffsetY) + 'px)';
-        });
+        var blobs = document.querySelectorAll('.parallax-blob');
+        var speeds = [0.02, 0.04, 0.06];
+        for (var i = 0; i < blobs.length; i++) {
+          var speed = speeds[i] || 0.03;
+          blobs[i].style.transform = 'translate(' + (targetX * 15 * speed) + 'px, ' + (scrollY * speed + targetY * 15 * speed) + 'px)';
+        }
 
-        shapes.forEach(function(shape, index) {
-          var depth = (index + 1) * 8;
-          var mouseOffsetX = targetX * depth;
-          var mouseOffsetY = targetY * depth;
-          shape.style.setProperty('--mouse-x', mouseOffsetX + 'px');
-          shape.style.setProperty('--mouse-y', mouseOffsetY + 'px');
-        });
+        // 导航栏阴影
+        if (nav) {
+          nav.style.boxShadow = scrollY > 100 ? '0 2px 10px rgba(124, 58, 237, 0.08)' : 'none';
+        }
 
         ticking = false;
       }
@@ -211,41 +211,25 @@
         }
       }, { passive: true });
 
-      window.addEventListener('mousemove', function() {
-        if (!ticking) {
-          window.requestAnimationFrame(updateParallax);
-          ticking = true;
-        }
-      });
-
       updateParallax();
     })();
 
-    // 作品卡片依次进入动画（先添加类）
+    // 作品卡片依次进入动画
     (function(){
       var grid = document.querySelector('.works-grid');
       if (!grid) return;
-      
       var cards = grid.querySelectorAll('.work-card');
       cards.forEach(function(card, index) {
         card.classList.add('animate-on-scroll');
-        card.style.transitionDelay = (index * 100) + 'ms';
+        card.style.transitionDelay = (index * 80) + 'ms';
       });
     })();
 
-    // 滚动触发动画（多种动画类型）
+    // 滚动触发动画
     (function(){
-      var selectors = [
-        '.animate-on-scroll',
-        '.animate-slide-left',
-        '.animate-slide-right',
-        '.animate-scale-in'
-      ];
-      
-      var elements = document.querySelectorAll(selectors.join(','));
+      var elements = document.querySelectorAll('.animate-on-scroll');
       if (!elements.length) return;
 
-      // 安全回退：如果 IntersectionObserver 不可用，直接显示所有元素
       if (!('IntersectionObserver' in window)) {
         elements.forEach(function(el) { el.classList.add('visible'); });
         return;
@@ -254,22 +238,15 @@
       var observer = new IntersectionObserver(function(entries) {
         entries.forEach(function(entry) {
           if (entry.isIntersecting) {
-            // 添加延迟效果
-            var delay = entry.target.dataset.delay || 0;
-            setTimeout(function() {
-              entry.target.classList.add('visible');
-            }, delay);
+            entry.target.classList.add('visible');
             observer.unobserve(entry.target);
           }
         });
-      }, { 
-        threshold: 0.1,
-        rootMargin: '0px 0px -50px 0px'
-      });
+      }, { threshold: 0.1, rootMargin: '0px 0px -30px 0px' });
 
       elements.forEach(function(el) { observer.observe(el); });
 
-      // 额外安全措施：1秒后强制显示所有动画元素
+      // 安全回退：1.5秒后强制显示
       setTimeout(function() {
         elements.forEach(function(el) {
           if (!el.classList.contains('visible')) {
@@ -277,136 +254,45 @@
             observer.unobserve(el);
           }
         });
-      }, 1000);
+      }, 1500);
     })();
 
-    // 作品卡片 3D 倾斜效果
-    (function(){
-      var cards = document.querySelectorAll('.work-card, .tilt-card');
-      if (!cards.length) return;
-
-      cards.forEach(function(card) {
-        card.addEventListener('mousemove', function(e) {
-          var rect = card.getBoundingClientRect();
-          var x = e.clientX - rect.left;
-          var y = e.clientY - rect.top;
-          var centerX = rect.width / 2;
-          var centerY = rect.height / 2;
-          var rotateX = ((y - centerY) / centerY) * -5;
-          var rotateY = ((x - centerX) / centerX) * 5;
-          
-          card.style.transform = 'translateY(-12px) rotateX(' + rotateX + 'deg) rotateY(' + rotateY + 'deg) scale(1.02)';
-        });
-
-        card.addEventListener('mouseleave', function() {
-          card.style.transform = '';
-        });
-      });
-    })();
-
-    // 运行时间计数器
+    // 运行时间计数器 - 性能优化：内联初始值，避免额外 fetch 请求
     (function(){
       var daysEl = document.getElementById('uptime-days');
+      if (!daysEl) return;
       var hoursEl = document.getElementById('uptime-hours');
       var minutesEl = document.getElementById('uptime-minutes');
       var secondsEl = document.getElementById('uptime-seconds');
-      
-      if (!daysEl) return;
-      
-      var serverStartTime = null;
-      var clientStartTimestamp = Date.now();
-      
-      function pad(n) {
-        return n < 10 ? '0' + n : '' + n;
-      }
-      
-      function calculateUptime(totalSeconds) {
-        var days = Math.floor(totalSeconds / 86400);
-        var hours = Math.floor((totalSeconds % 86400) / 3600);
-        var minutes = Math.floor((totalSeconds % 3600) / 60);
-        var seconds = Math.floor(totalSeconds % 60);
-        return { days: days, hours: hours, minutes: minutes, seconds: seconds };
-      }
-      
-      function updateDisplay(uptime) {
-        daysEl.textContent = uptime.days;
-        hoursEl.textContent = pad(uptime.hours);
-        minutesEl.textContent = pad(uptime.minutes);
-        secondsEl.textContent = pad(uptime.seconds);
-      }
-      
-      // 从服务器获取启动时间
-      fetch('/api/uptime')
-        .then(function(res) { return res.json(); })
-        .then(function(data) {
-          // 保存服务器启动的相对时间
-          serverStartTime = data.total_seconds;
-          updateDisplay(data);
-          
-          // 每秒更新
-          setInterval(function() {
-            serverStartTime++;
-            updateDisplay(calculateUptime(serverStartTime));
-          }, 1000);
-        })
-        .catch(function() {
-          // 如果 API 不可用，使用客户端时间
-          var localSeconds = 0;
-          setInterval(function() {
-            localSeconds += 1;
-            updateDisplay(calculateUptime(localSeconds));
-          }, 1000);
-        });
-    })();
 
-    // 按钮涟漪效果
-    (function(){
-      var buttons = document.querySelectorAll('.btn, .nav-btn-login');
-      buttons.forEach(function(btn) {
-        btn.addEventListener('click', function(e) {
-          var rect = btn.getBoundingClientRect();
-          var x = e.clientX - rect.left;
-          var y = e.clientY - rect.top;
-          
-          var ripple = document.createElement('span');
-          ripple.style.cssText = 'position:absolute;border-radius:50%;background:rgba(255,255,255,0.5);pointer-events:none;transform:translate(-50%,-50%);animation:rippleEffect 0.6s ease-out forwards;';
-          ripple.style.left = x + 'px';
-          ripple.style.top = y + 'px';
-          ripple.style.width = ripple.style.height = '0';
-          
-          btn.style.position = 'relative';
-          btn.style.overflow = 'hidden';
-          btn.appendChild(ripple);
-          
-          setTimeout(function() {
-            ripple.remove();
-          }, 600);
-        });
-      });
+      function pad(n) { return n < 10 ? '0' + n : '' + n; }
 
-      // 添加涟漪动画
-      var style = document.createElement('style');
-      style.textContent = '@keyframes rippleEffect { to { width: 200px; height: 200px; opacity: 0; } }';
-      document.head.appendChild(style);
-    })();
+      // 从模板内联的初始值开始计数，避免额外网络请求
+      var totalSeconds = {{ uptime_seconds | default(0) }};
 
-    // 导航栏滚动效果
-    (function(){
-      var nav = document.querySelector('.nav-bar');
-      if (!nav) return;
-      
-      var lastScroll = 0;
-      window.addEventListener('scroll', function() {
-        var currentScroll = window.pageYOffset;
-        
-        if (currentScroll > 100) {
-          nav.style.boxShadow = '0 4px 20px rgba(124, 58, 237, 0.1)';
-        } else {
-          nav.style.boxShadow = 'none';
-        }
-        
-        lastScroll = currentScroll;
-      }, { passive: true });
+      function update() {
+        totalSeconds++;
+        var d = Math.floor(totalSeconds / 86400);
+        var h = Math.floor((totalSeconds % 86400) / 3600);
+        var m = Math.floor((totalSeconds % 3600) / 60);
+        var s = Math.floor(totalSeconds % 60);
+        daysEl.textContent = d;
+        hoursEl.textContent = pad(h);
+        minutesEl.textContent = pad(m);
+        secondsEl.textContent = pad(s);
+      }
+
+      // 初始显示
+      var d = Math.floor(totalSeconds / 86400);
+      var h = Math.floor((totalSeconds % 86400) / 3600);
+      var m = Math.floor((totalSeconds % 3600) / 60);
+      var s = Math.floor(totalSeconds % 60);
+      daysEl.textContent = d;
+      hoursEl.textContent = pad(h);
+      minutesEl.textContent = pad(m);
+      secondsEl.textContent = pad(s);
+
+      setInterval(update, 1000);
     })();
   </script>
 </body>

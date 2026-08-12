@@ -12,52 +12,40 @@
 body {
   background: #fafaff;
   background-image:
-    radial-gradient(ellipse 80% 60% at 10% 0%, rgba(124, 58, 237, 0.1) 0%, transparent 50%),
-    radial-gradient(ellipse 60% 50% at 100% 20%, rgba(236, 72, 153, 0.08) 0%, transparent 50%),
-    radial-gradient(ellipse 70% 60% at 50% 100%, rgba(34, 211, 238, 0.08) 0%, transparent 50%),
-    radial-gradient(ellipse 40% 30% at 80% 80%, rgba(245, 158, 11, 0.05) 0%, transparent 50%);
-  background-attachment: fixed;
+    radial-gradient(ellipse 80% 60% at 10% 0%, rgba(124, 58, 237, 0.08) 0%, transparent 50%),
+    radial-gradient(ellipse 60% 50% at 100% 20%, rgba(236, 72, 153, 0.06) 0%, transparent 50%);
   min-height: 100vh;
   overflow-x: hidden;
 }
 
-/* 滚动视差装饰元素 */
+/* 滚动视差装饰元素 - 性能优化：减少 blur 半径 */
 .parallax-blob {
   position: fixed;
   border-radius: 50%;
-  filter: blur(80px);
+  filter: blur(40px);
   pointer-events: none;
   z-index: 0;
-  will-change: transform;
-  transition: transform 0.1s linear;
 }
 .parallax-blob-1 {
-  width: 500px; height: 500px;
+  width: 300px; height: 300px;
   background: linear-gradient(135deg, #7c3aed, #ec4899);
-  top: -150px; left: -150px;
-  opacity: 0.18;
+  top: -100px; left: -100px;
+  opacity: 0.12;
   animation: floatBlob1 20s ease-in-out infinite;
 }
 .parallax-blob-2 {
-  width: 400px; height: 400px;
+  width: 250px; height: 250px;
   background: linear-gradient(135deg, #22d3ee, #7c3aed);
-  top: 30%; right: -150px;
-  opacity: 0.15;
+  top: 30%; right: -100px;
+  opacity: 0.1;
   animation: floatBlob2 25s ease-in-out infinite;
 }
 .parallax-blob-3 {
-  width: 350px; height: 350px;
+  width: 200px; height: 200px;
   background: linear-gradient(135deg, #f59e0b, #ec4899);
-  bottom: -100px; left: 30%;
-  opacity: 0.12;
+  bottom: -50px; left: 30%;
+  opacity: 0.08;
   animation: floatBlob3 22s ease-in-out infinite;
-}
-.parallax-blob-4 {
-  width: 250px; height: 250px;
-  background: linear-gradient(135deg, #10b981, #22d3ee);
-  top: 60%; left: 10%;
-  opacity: 0.1;
-  animation: floatBlob4 18s ease-in-out infinite;
 }
 
 @keyframes floatBlob1 {
@@ -74,10 +62,6 @@ body {
   25% { transform: translate(40px, -50px) scale(1.05); }
   75% { transform: translate(-30px, 30px) scale(0.9); }
 }
-@keyframes floatBlob4 {
-  0%, 100% { transform: translate(0, 0) rotate(0deg); }
-  50% { transform: translate(30px, -40px) rotate(180deg) scale(1.1); }
-}
 
 /* 浮动装饰形状 */
 .floating-shape {
@@ -85,7 +69,6 @@ body {
   pointer-events: none;
   z-index: 0;
   animation: shapeFloat 6s ease-in-out infinite;
-  will-change: transform;
 }
 .floating-shape:nth-child(odd) {
   animation-direction: reverse;
@@ -101,9 +84,7 @@ body {
 .nav-bar {
   padding-top: 1rem;
   padding-bottom: 1rem;
-  background: rgba(255, 255, 255, 0.7) !important;
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
+  background: rgba(255, 255, 255, 0.92) !important;
   border-bottom: none !important;
 }
 .nav-bar > div > div {
@@ -382,18 +363,15 @@ body {
 
 /* ========== 卡片（不对称风格 + 3D效果） ========== */
 .card {
-  background: rgba(255, 255, 255, 0.85);
-  backdrop-filter: blur(15px);
-  -webkit-backdrop-filter: blur(15px);
+  background: rgba(255, 255, 255, 0.95);
   border-radius: 1.5rem;
   border: 1px solid rgba(255, 255, 255, 0.8);
   box-shadow:
-    0 8px 32px rgba(124, 58, 237, 0.1),
-    0 2px 8px rgba(0, 0, 0, 0.04);
-  transition: all 0.4s var(--transition-bounce);
+    0 4px 16px rgba(124, 58, 237, 0.08),
+    0 1px 4px rgba(0, 0, 0, 0.03);
+  transition: all 0.3s var(--transition-bounce);
   position: relative;
   overflow: hidden;
-  transform-style: preserve-3d;
 }
 .card::before {
   content: '';
@@ -410,26 +388,26 @@ body {
 .card::after {
   content: '';
   position: absolute;
-  top: -50%;
-  left: -50%;
-  width: 200%;
-  height: 200%;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
   background: linear-gradient(
     45deg,
     transparent 40%,
-    rgba(255, 255, 255, 0.1) 50%,
+    rgba(255, 255, 255, 0.08) 50%,
     transparent 60%
   );
   transform: translateX(-100%);
-  transition: transform 0.8s ease;
+  transition: transform 0.6s ease;
   pointer-events: none;
 }
 .card:hover {
-  transform: translateY(-8px) rotate(-0.5deg);
+  transform: translateY(-4px);
   box-shadow:
-    0 20px 50px rgba(124, 58, 237, 0.2),
-    0 8px 16px rgba(0, 0, 0, 0.08);
-  border-color: rgba(124, 58, 237, 0.3);
+    0 8px 24px rgba(124, 58, 237, 0.12),
+    0 2px 8px rgba(0, 0, 0, 0.05);
+  border-color: rgba(124, 58, 237, 0.2);
 }
 .card:hover::after {
   transform: translateX(100%);
@@ -447,38 +425,38 @@ body {
 
 /* ========== 作品卡片 ========== */
 .work-card {
-  background: rgba(255, 255, 255, 0.9);
+  background: rgba(255, 255, 255, 0.95);
   border-radius: 1.5rem;
   overflow: hidden;
   box-shadow:
-    0 8px 32px rgba(124, 58, 237, 0.1),
-    0 2px 8px rgba(0, 0, 0, 0.04);
+    0 4px 16px rgba(124, 58, 237, 0.08),
+    0 1px 4px rgba(0, 0, 0, 0.03);
   border: 1px solid rgba(255, 255, 255, 0.8);
-  transition: all 0.5s var(--transition-bounce);
+  transition: transform 0.3s ease, box-shadow 0.3s ease, border-color 0.3s ease;
   display: block;
   text-decoration: none;
   color: inherit;
   position: relative;
-  transform-style: preserve-3d;
-  perspective: 1000px;
+  content-visibility: auto;
+  contain: layout style;
 }
 .work-card::before {
   content: '';
   position: absolute;
-  top: -50%;
-  left: -50%;
-  width: 200%;
-  height: 200%;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
   background: linear-gradient(
     45deg,
     transparent 30%,
-    rgba(255, 255, 255, 0.15) 45%,
-    rgba(255, 255, 255, 0.25) 50%,
-    rgba(255, 255, 255, 0.15) 55%,
+    rgba(255, 255, 255, 0.12) 45%,
+    rgba(255, 255, 255, 0.2) 50%,
+    rgba(255, 255, 255, 0.12) 55%,
     transparent 70%
   );
   transform: translateX(-100%) rotate(45deg);
-  transition: transform 0.8s ease;
+  transition: transform 0.6s ease;
   pointer-events: none;
   z-index: 2;
 }
@@ -494,11 +472,11 @@ body {
   z-index: 1;
 }
 .work-card:hover {
-  transform: translateY(-12px) rotate(-1deg) scale(1.02);
+  transform: translateY(-6px) scale(1.01);
   box-shadow:
-    0 25px 70px rgba(124, 58, 237, 0.25),
-    0 10px 20px rgba(0, 0, 0, 0.08);
-  border-color: rgba(124, 58, 237, 0.3);
+    0 12px 32px rgba(124, 58, 237, 0.15),
+    0 4px 8px rgba(0, 0, 0, 0.05);
+  border-color: rgba(124, 58, 237, 0.2);
 }
 .work-card:hover::before {
   transform: translateX(100%) rotate(45deg);
@@ -770,11 +748,10 @@ body {
 
 /* ========== 作品详情 ========== */
 .work-info-card {
-  background: rgba(255, 255, 255, 0.9);
-  backdrop-filter: blur(10px);
+  background: rgba(255, 255, 255, 0.95);
   border-radius: 1.5rem;
   border: 1px solid rgba(255, 255, 255, 0.8);
-  box-shadow: 0 8px 32px rgba(124, 58, 237, 0.1);
+  box-shadow: 0 4px 16px rgba(124, 58, 237, 0.08);
   padding: 2rem;
   margin-bottom: 1.5rem;
   position: relative;
@@ -810,11 +787,10 @@ body {
 }
 
 .preview-card {
-  background: rgba(255, 255, 255, 0.9);
-  backdrop-filter: blur(10px);
+  background: rgba(255, 255, 255, 0.95);
   border-radius: 1.5rem;
   border: 1px solid rgba(255, 255, 255, 0.8);
-  box-shadow: 0 8px 32px rgba(124, 58, 237, 0.08);
+  box-shadow: 0 4px 16px rgba(124, 58, 237, 0.06);
   padding: 1rem;
 }
 .preview-hint {
@@ -951,9 +927,9 @@ body {
   transition: transform 0.3s ease-out;
 }
 
-/* 全局过渡 */
-a, button, .work-card, .card, .btn {
-  transition: all 0.3s var(--transition-bounce);
+/* 全局过渡 - 性能优化：只过渡需要的属性 */
+a, button {
+  transition: color 0.2s ease, background 0.2s ease, opacity 0.2s ease;
 }
 
 /* 点击涟漪效果 */

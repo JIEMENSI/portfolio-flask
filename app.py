@@ -96,6 +96,7 @@ def mask_username(username):
 @app.context_processor
 def inject_user():
     """全局注入用户信息给模板"""
+    uptime_seconds = int(time.time() - SERVER_START_TIME)
     role = session.get("role")
     if role == "admin":
         username = session.get("username", "")
@@ -103,14 +104,16 @@ def inject_user():
             "user_role": "admin",
             "display_name": mask_username(username),
             "avatar_url": get_avatar_url(username),
+            "uptime_seconds": uptime_seconds,
         }
     if role == "guest":
         return {
             "user_role": "guest",
             "display_name": "游客114514",
             "avatar_url": DEFAULT_AVATAR,
+            "uptime_seconds": uptime_seconds,
         }
-    return {"user_role": None, "display_name": None, "avatar_url": None}
+    return {"user_role": None, "display_name": None, "avatar_url": None, "uptime_seconds": uptime_seconds}
 
 @app.route("/")
 def index():
