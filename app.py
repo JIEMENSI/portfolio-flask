@@ -7,8 +7,8 @@ from datetime import datetime
 from functools import wraps
 from werkzeug.utils import secure_filename
 
-# 记录服务器启动时间
-SERVER_START_TIME = time.time()
+# 网站上线时间：2026年8月6日13时24分36秒
+SITE_LAUNCH_TIME = datetime(2026, 8, 6, 13, 24, 36).timestamp()
 
 # 获取项目根目录（兼容不同运行方式）
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -96,7 +96,7 @@ def mask_username(username):
 @app.context_processor
 def inject_user():
     """全局注入用户信息给模板"""
-    uptime_seconds = int(time.time() - SERVER_START_TIME)
+    uptime_seconds = int(time.time() - SITE_LAUNCH_TIME)
     role = session.get("role")
     if role == "admin":
         username = session.get("username", "")
@@ -386,7 +386,7 @@ def delete_work(work_id):
 @app.route("/api/uptime")
 def get_uptime():
     """获取服务器运行时间"""
-    uptime_seconds = time.time() - SERVER_START_TIME
+    uptime_seconds = time.time() - SITE_LAUNCH_TIME
     
     days = int(uptime_seconds // 86400)
     hours = int((uptime_seconds % 86400) // 3600)
