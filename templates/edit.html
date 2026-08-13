@@ -43,6 +43,16 @@
       </div>
 
       <div class="form-group">
+        <label for="group" class="form-label">作品分组</label>
+        <select id="group" name="group" class="form-input">
+          {% for group in groups %}
+          <option value="{{ group }}" {% if (work.group or '默认') == group %}selected{% endif %}>{{ group }}</option>
+          {% endfor %}
+        </select>
+        <p class="form-hint">选择作品所属分组</p>
+      </div>
+
+      <div class="form-group">
         <label class="form-label">当前封面</label>
         <div class="cover-preview-section">
           {% if work.cover %}

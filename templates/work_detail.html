@@ -3,7 +3,8 @@
 
 {% block content %}
 <div class="page-container page-fade-in">
-  {% if user_role == 'admin' %}
+  {% set from_admin = request.referrer and '/admin' in request.referrer %}
+  {% if user_role == 'admin' and from_admin %}
   <a href="{{ url_for('admin') }}" class="back-link">
     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-right:6px;">
       <path d="M19 12H5M12 19l-7-7 7-7"/>
@@ -15,7 +16,7 @@
     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-right:6px;">
       <path d="M19 12H5M12 19l-7-7 7-7"/>
     </svg>
-    返回作品列表
+    返回作品广场
   </a>
   {% endif %}
 

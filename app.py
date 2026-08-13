@@ -30,7 +30,9 @@ ADMIN_ACCOUNTS = [
 
 DATA_FILE = os.path.join(BASE_DIR, "data", "works.json")
 AVATARS_FILE = os.path.join(BASE_DIR, "data", "avatars.json")
+GROUPS_FILE = os.path.join(BASE_DIR, "data", "groups.json")
 DEFAULT_AVATAR = "images/avatar.png"  # 相对 static 目录
+DEFAULT_GROUP = "默认"  # 默认分组名
 
 # 确保目录存在
 os.makedirs(app.config["UPLOAD_FOLDER"], exist_ok=True)
@@ -44,13 +46,35 @@ def load_works():
         return []
     try:
         with open(DATA_FILE, "r", encoding="utf-8") as f:
-            return json.load(f)
+            works = json.load(f)
+        # 兼容旧数据：确保每个 work 都有 group 字段
+        for w in works:
+            if "group" not in w:
+                w["group"] = DEFAULT_GROUP
+        return works
     except Exception:
         return []
 
 def save_works(works):
     with open(DATA_FILE, "w", encoding="utf-8") as f:
         json.dump(works, f, ensure_ascii=False, indent=2)
+
+def load_groups():
+    """加载分组列表，若文件不存在返回默认分组"""
+    if not os.path.exists(GROUPS_FILE):
+        return [DEFAULT_GROUP]
+    try:
+        with open(GROUPS_FILE, "r", encoding="utf-8") as f:
+            groups = json.load(f)
+        if not groups or DEFAULT_GROUP not in groups:
+            groups.insert(0, DEFAULT_GROUP)
+        return groups
+    except Exception:
+        return [DEFAULT_GROUP]
+
+def save_groups(groups):
+    with open(GROUPS_FILE, "w", encoding="utf-8") as f:
+        json.dump(groups, f, ensure_ascii=False, indent=2)
 
 def load_avatars():
     """加载头像映射 {username: avatar_filename}"""
@@ -126,7 +150,21 @@ def index():
 def works_list():
     works = load_works()
     works = sorted(works, key=lambda x: x.get("created_at", ""), reverse=True)
-    return render_template("works.html", works=works)
+    groups = load_groups()
+    current_group = request.args.get("group", "")
+    # 统计各分组作品数
+    group_counts = {}
+    for w in works:
+        g = w.get("group", DEFAULT_GROUP)
+        group_counts[g] = group_counts.get(g, 0) + 1
+    # 按分组筛选
+    if current_group:
+        filtered = [w for w in works if w.get("group", DEFAULT_GROUP) == current_group]
+    else:
+        filtered = works
+    return render_template("works.html", works=filtered, groups=groups,
+                           current_group=current_group, group_counts=group_counts,
+                           total_count=len(works))
 
 @app.route("/works/<work_id>")
 def work_detail(work_id):
@@ -223,12 +261,58 @@ def upload_avatar():
     flash("头像更新成功", "success")
     return redirect(request.referrer or url_for("admin"))
 
+@app.route("/admin/groups", methods=["POST"])
+@admin_required
+def manage_groups():
+    """分组管理：新增/删除分组"""
+    action = request.form.get("action", "")
+    name = request.form.get("name", "").strip()
+
+    if action == "add":
+        if not name:
+            flash("分组名称不能为空", "error")
+            return redirect(url_for("admin"))
+        groups = load_groups()
+        if name not in groups:
+            groups.append(name)
+            save_groups(groups)
+            flash(f"分组「{name}」已添加", "success")
+        else:
+            flash(f"分组「{name}」已存在", "error")
+
+    elif action == "delete":
+        if not name:
+            flash("分组名称不能为空", "error")
+            return redirect(url_for("admin"))
+        if name == DEFAULT_GROUP:
+            flash("默认分组不可删除", "error")
+            return redirect(url_for("admin"))
+        groups = load_groups()
+        if name in groups:
+            groups.remove(name)
+            save_groups(groups)
+            # 将该分组下的作品移到默认分组
+            works = load_works()
+            changed = False
+            for w in works:
+                if w.get("group") == name:
+                    w["group"] = DEFAULT_GROUP
+                    changed = True
+            if changed:
+                save_works(works)
+            flash(f"分组「{name}」已删除，相关作品已移至默认分组", "success")
+        else:
+            flash("分组不存在", "error")
+
+    return redirect(url_for("admin"))
+
 @app.route("/admin")
 @admin_required
 def admin():
     works = load_works()
     works = sorted(works, key=lambda x: x.get("created_at", ""), reverse=True)
-    return render_template("admin.html", works=works)
+    groups = load_groups()
+    return render_template("admin.html", works=works, groups=groups)
 
 @app.route("/admin/upload", methods=["GET", "POST"])
 @admin_required
@@ -237,6 +321,7 @@ def upload():
         title = request.form.get("title", "").strip()
         description = request.form.get("description", "").strip()
         remark = request.form.get("remark", "").strip()
+        group = request.form.get("group", DEFAULT_GROUP).strip() or DEFAULT_GROUP
         file = request.files.get("html_file")
         cover = request.files.get("cover_file")
 
@@ -254,6 +339,12 @@ def upload():
             return redirect(url_for("upload"))
 
         filename = secure_filename(original_filename)
+
+        # 若分组不存在则自动添加
+        groups = load_groups()
+        if group not in groups:
+            groups.append(group)
+            save_groups(groups)
 
         # 生成唯一文件名
         work_id = str(uuid.uuid4())[:8]
@@ -277,6 +368,7 @@ def upload():
             "title": title,
             "description": description,
             "remark": remark,
+            "group": group,
             "filename": new_filename,
             "cover": cover_filename,
             "original_name": filename,
@@ -287,7 +379,8 @@ def upload():
         flash(f"作品「{title}」上传成功！", "success")
         return redirect(url_for("admin"))
 
-    return render_template("upload.html")
+    groups = load_groups()
+    return render_template("upload.html", groups=groups)
 
 def _save_cover(file_storage, work_id):
     """保存封面图，返回文件名；格式不合法返回 None"""
@@ -313,6 +406,7 @@ def edit_work(work_id):
         title = request.form.get("title", "").strip()
         description = request.form.get("description", "").strip()
         remark = request.form.get("remark", "").strip()
+        group = request.form.get("group", DEFAULT_GROUP).strip() or DEFAULT_GROUP
         cover = request.files.get("cover_file")
         remove_cover = request.form.get("remove_cover") == "1"
 
@@ -320,9 +414,16 @@ def edit_work(work_id):
             flash("请输入作品名称", "error")
             return redirect(url_for("edit_work", work_id=work_id))
 
+        # 若分组不存在则自动添加
+        groups = load_groups()
+        if group not in groups:
+            groups.append(group)
+            save_groups(groups)
+
         work["title"] = title
         work["description"] = description
         work["remark"] = remark
+        work["group"] = group
 
         if remove_cover and work.get("cover"):
             old_cover_path = os.path.join(app.config["COVER_FOLDER"], work["cover"])
@@ -352,7 +453,8 @@ def edit_work(work_id):
         flash("作品信息已更新", "success")
         return redirect(url_for("admin"))
 
-    return render_template("edit.html", work=work)
+    groups = load_groups()
+    return render_template("edit.html", work=work, groups=groups)
 
 @app.route("/admin/delete/<work_id>", methods=["POST"])
 @admin_required

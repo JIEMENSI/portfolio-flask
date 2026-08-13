@@ -50,6 +50,16 @@
         <input type="text" id="remark" name="remark" class="form-input" placeholder="例如：客户、来源、版本等">
       </div>
 
+      <div class="form-group">
+        <label for="group" class="form-label">作品分组</label>
+        <select id="group" name="group" class="form-input">
+          {% for group in groups %}
+          <option value="{{ group }}" {% if group == '默认' %}selected{% endif %}>{{ group }}</option>
+          {% endfor %}
+        </select>
+        <p class="form-hint">选择作品所属分组，不选则归入"默认"分组</p>
+      </div>
+
       <!-- 文件上传区域 -->
       <div class="form-group">
         <label class="form-label">
