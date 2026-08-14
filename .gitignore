@@ -31,3 +31,12 @@ Thumbs.db
 
 # Flask session
 instance/
+
+# 用户数据和上传文件（禁止被 git 跟踪，防止 reset --hard 时丢失）
+data/works.json
+data/avatars.json
+data/groups.json
+static/uploads/
+static/covers/
+static/avatars/
+rebuild_data.py

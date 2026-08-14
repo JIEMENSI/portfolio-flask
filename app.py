@@ -541,6 +541,33 @@ def edit_work(work_id):
     groups = load_groups()
     return render_template("edit.html", work=work, groups=groups)
 
+@app.route("/admin/update_group/<work_id>", methods=["POST"])
+@admin_required
+def update_group(work_id):
+    """AJAX: 快速更新单个作品的分组"""
+    works = load_works()
+    work = next((w for w in works if w["id"] == work_id), None)
+    if not work:
+        return jsonify({"ok": False, "msg": "作品不存在"}), 404
+
+    # 兼容 form 和 JSON 两种提交方式
+    if request.is_json:
+        data = request.get_json(silent=True) or {}
+        new_group = data.get("group")
+    else:
+        new_group = request.form.get("group")
+    new_group = (new_group or "").strip() or DEFAULT_GROUP
+
+    # 新分组若不存在则自动加进分组列表
+    groups = load_groups()
+    if new_group not in groups:
+        groups.append(new_group)
+        save_groups(groups)
+
+    work["group"] = new_group
+    save_works(works)
+    return jsonify({"ok": True, "group": new_group, "groups": groups})
+
 @app.route("/admin/delete/<work_id>", methods=["POST"])
 @admin_required
 def delete_work(work_id):

@@ -114,7 +114,31 @@
               {% endif %}
             </td>
             <td class="hidden lg:table-cell">
-              <span class="group-badge">{{ work.group or '默认' }}</span>
+              <div class="inline-group-edit" data-work-id="{{ work.id }}" data-current="{{ work.group or '默认' }}">
+                <div class="group-badge group-edit-trigger" title="点击修改分组">
+                  <span class="group-badge-text">{{ work.group or '默认' }}</span>
+                  <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-left:4px;opacity:0.7;">
+                    <polyline points="6 9 12 15 18 9"/>
+                  </svg>
+                </div>
+                <div class="group-edit-panel">
+                  <div class="group-edit-search-wrap">
+                    <input type="text" class="group-edit-input" placeholder="选分组或输入新分组…" list="">
+                  </div>
+                  <div class="group-edit-options">
+                    {% for g in groups %}
+                    <button type="button" class="group-edit-option {% if g == (work.group or '默认') %}active{% endif %}" data-group="{{ g }}">
+                      <span>{{ g }}</span>
+                      {% if g == (work.group or '默认') %}
+                      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
+                        <polyline points="20 6 9 17 4 12"/>
+                      </svg>
+                      {% endif %}
+                    </button>
+                    {% endfor %}
+                  </div>
+                </div>
+              </div>
             </td>
             <td>
               {% if work.is_public or work.is_public is none %}
@@ -503,5 +527,214 @@
       justify-content: space-between;
     }
   }
+  /* ===== 分组内联编辑 ===== */
+  .inline-group-edit {
+    position: relative;
+    display: inline-block;
+  }
+  .group-edit-trigger {
+    cursor: pointer;
+    padding-right: 0.5rem !important;
+    transition: all 0.2s ease;
+    user-select: none;
+  }
+  .group-edit-trigger:hover {
+    box-shadow: 0 4px 12px rgba(124, 58, 237, 0.2);
+    transform: translateY(-1px);
+  }
+  .group-edit-panel {
+    position: absolute;
+    top: calc(100% + 6px);
+    left: 0;
+    min-width: 200px;
+    background: #fff;
+    border: 1px solid rgba(124, 58, 237, 0.15);
+    border-radius: 0.75rem;
+    box-shadow: 0 12px 32px rgba(124, 58, 237, 0.15);
+    padding: 0.5rem;
+    z-index: 100;
+    display: none;
+    animation: panelIn 0.2s ease;
+  }
+  .inline-group-edit.open .group-edit-panel {
+    display: block;
+  }
+  @keyframes panelIn {
+    from { opacity: 0; transform: translateY(-4px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  .group-edit-search-wrap {
+    margin-bottom: 0.375rem;
+    border-bottom: 1px solid #f0f0f0;
+    padding-bottom: 0.375rem;
+  }
+  .group-edit-input {
+    width: 100%;
+    padding: 0.375rem 0.625rem;
+    border: 1.5px solid #e5e5e5;
+    border-radius: 0.5rem;
+    font-size: 0.8125rem;
+    outline: none;
+    transition: border-color 0.2s ease;
+    box-sizing: border-box;
+  }
+  .group-edit-input:focus {
+    border-color: #7c3aed;
+  }
+  .group-edit-options {
+    max-height: 220px;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+  .group-edit-option {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    width: 100%;
+    padding: 0.375rem 0.625rem;
+    border: none;
+    background: transparent;
+    border-radius: 0.375rem;
+    font-size: 0.8125rem;
+    color: #444;
+    cursor: pointer;
+    text-align: left;
+    font-weight: 500;
+    transition: background 0.15s ease, color 0.15s ease;
+  }
+  .group-edit-option:hover {
+    background: linear-gradient(135deg, rgba(124, 58, 237, 0.08), rgba(236, 72, 153, 0.08));
+    color: #7c3aed;
+  }
+  .group-edit-option.active {
+    background: linear-gradient(135deg, rgba(124, 58, 237, 0.15), rgba(236, 72, 153, 0.15));
+    color: #7c3aed;
+    font-weight: 600;
+  }
+  .inline-group-edit.saving .group-edit-trigger {
+    opacity: 0.5;
+    pointer-events: none;
+    animation: pulse 1s ease-in-out infinite;
+  }
+  .inline-group-edit.saving .group-edit-trigger::after {
+    content: '…';
+    display: inline-block;
+    margin-left: 2px;
+  }
+  @keyframes pulse {
+    0%, 100% { opacity: 0.5; }
+    50% { opacity: 0.8; }
+  }
 </style>
+
+<script>
+(function(){
+  // 全局点击关闭分组编辑面板
+  document.addEventListener('click', function(e) {
+    document.querySelectorAll('.inline-group-edit.open').forEach(function(el) {
+      if (!el.contains(e.target)) el.classList.remove('open');
+    });
+  });
+
+  document.querySelectorAll('.inline-group-edit').forEach(function(editor) {
+    var trigger = editor.querySelector('.group-edit-trigger');
+    var panel = editor.querySelector('.group-edit-panel');
+    var input = editor.querySelector('.group-edit-input');
+    var optionsWrap = editor.querySelector('.group-edit-options');
+    var badgeText = editor.querySelector('.group-badge-text');
+    var workId = editor.getAttribute('data-work-id');
+
+    // 点击触发器开/关面板
+    trigger.addEventListener('click', function(e) {
+      e.stopPropagation();
+      document.querySelectorAll('.inline-group-edit.open').forEach(function(o) {
+        if (o !== editor) o.classList.remove('open');
+      });
+      editor.classList.toggle('open');
+      if (editor.classList.contains('open')) {
+        setTimeout(function() { input.focus(); input.select(); }, 50);
+      }
+    });
+
+    // 点击选项提交
+    optionsWrap.addEventListener('click', function(e) {
+      var btn = e.target.closest('.group-edit-option');
+      if (!btn) return;
+      e.stopPropagation();
+      submitGroup(btn.getAttribute('data-group'));
+    });
+
+    // 输入框回车：如果已有匹配选项则提交，否则新建分组
+    input.addEventListener('keydown', function(e) {
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        var val = input.value.trim();
+        if (!val) return;
+        submitGroup(val);
+      } else if (e.key === 'Escape') {
+        editor.classList.remove('open');
+      }
+    });
+
+    // 输入过滤选项
+    input.addEventListener('input', function() {
+      var q = input.value.trim().toLowerCase();
+      var opts = optionsWrap.querySelectorAll('.group-edit-option');
+      opts.forEach(function(opt) {
+        var name = opt.getAttribute('data-group').toLowerCase();
+        opt.style.display = name.indexOf(q) >= 0 ? 'flex' : 'none';
+      });
+    });
+
+    function submitGroup(group) {
+      var current = editor.getAttribute('data-current');
+      if (group === current) {
+        editor.classList.remove('open');
+        return;
+      }
+      editor.classList.add('saving');
+      editor.classList.remove('open');
+      fetch('{{ url_for("update_group", work_id="__WID__") }}'.replace('__WID__', workId), {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'same-origin',
+        body: JSON.stringify({ group: group })
+      })
+      .then(function(r) { return r.json(); })
+      .then(function(data) {
+        if (data.ok) {
+          badgeText.textContent = data.group;
+          editor.setAttribute('data-current', data.group);
+          // 同步更新选项 active 状态
+          optionsWrap.querySelectorAll('.group-edit-option').forEach(function(opt) {
+            var match = opt.getAttribute('data-group') === data.group;
+            opt.classList.toggle('active', match);
+            opt.querySelector('svg') && opt.querySelector('svg').remove();
+            if (match) {
+              var svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+              svg.setAttribute('width', '12'); svg.setAttribute('height', '12');
+              svg.setAttribute('viewBox', '0 0 24 24'); svg.setAttribute('fill', 'none');
+              svg.setAttribute('stroke', 'currentColor'); svg.setAttribute('stroke-width', '3');
+              svg.innerHTML = '<polyline points="20 6 9 17 4 12"/>';
+              opt.appendChild(svg);
+            }
+          });
+          // 给个成功反馈（短暂变绿）
+          var originBg = trigger.style.background;
+          trigger.style.background = 'linear-gradient(135deg, rgba(34,197,94,0.2), rgba(16,185,129,0.2))';
+          setTimeout(function() { trigger.style.background = originBg; }, 600);
+        } else {
+          alert('保存失败：' + (data.msg || '未知错误'));
+        }
+      })
+      .catch(function(err) { alert('网络错误：' + err); })
+      .finally(function() {
+        editor.classList.remove('saving');
+      });
+    }
+  });
+})();
+</script>
 {% endblock %}
