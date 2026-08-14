@@ -165,6 +165,10 @@ def works_list():
     for w in works:
         g = w.get("group", DEFAULT_GROUP)
         group_counts[g] = group_counts.get(g, 0) + 1
+
+    # 游客：隐藏没有作品的分组
+    if role == "guest":
+        groups = [g for g in groups if group_counts.get(g, 0) > 0]
     # 按分组筛选
     if current_group:
         filtered = [w for w in works if w.get("group", DEFAULT_GROUP) == current_group]
