@@ -60,6 +60,20 @@
         <p class="form-hint">选择作品所属分组，不选则归入"默认"分组</p>
       </div>
 
+      <div class="form-group">
+        <label class="form-label">是否对游客展示</label>
+        <div class="public-toggle-wrapper">
+          <label class="switch">
+            <input type="checkbox" id="is_public" name="is_public" checked>
+            <span class="slider"></span>
+          </label>
+          <div class="toggle-info">
+            <span class="toggle-label" id="toggle_label">公开</span>
+            <span class="toggle-desc">开启后游客可查看此作品，关闭后仅管理员可见</span>
+          </div>
+        </div>
+      </div>
+
       <!-- 文件上传区域 -->
       <div class="form-group">
         <label class="form-label">
@@ -297,6 +311,69 @@
     background: linear-gradient(135deg, rgba(124, 58, 237, 0.05), rgba(236, 72, 153, 0.05));
     transform: none;
   }
+
+  /* 公开开关样式 */
+  .public-toggle-wrapper {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    padding: 0.75rem 1rem;
+    background: #f8f8fa;
+    border-radius: 0.75rem;
+    border: 1px solid #eee;
+  }
+  .switch {
+    position: relative;
+    display: inline-block;
+    width: 48px;
+    height: 26px;
+    flex-shrink: 0;
+  }
+  .switch input {
+    opacity: 0;
+    width: 0;
+    height: 0;
+  }
+  .slider {
+    position: absolute;
+    cursor: pointer;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background-color: #ccc;
+    transition: .3s;
+    border-radius: 26px;
+  }
+  .slider:before {
+    position: absolute;
+    content: "";
+    height: 20px;
+    width: 20px;
+    left: 3px;
+    bottom: 3px;
+    background-color: white;
+    transition: .3s;
+    border-radius: 50%;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+  }
+  input:checked + .slider {
+    background: linear-gradient(135deg, #7c3aed, #ec4899);
+  }
+  input:checked + .slider:before {
+    transform: translateX(22px);
+  }
+  .toggle-info {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+  .toggle-label {
+    font-weight: 600;
+    color: #333;
+    font-size: 0.9rem;
+  }
+  .toggle-desc {
+    font-size: 0.75rem;
+    color: #888;
+  }
 </style>
 
 <script>
@@ -332,6 +409,15 @@
 
   setupFileInput('html_file', 'html_placeholder', 'html_selected', 'html_name', 'html_size', 'html_upload_area');
   setupFileInput('cover_file', 'cover_placeholder', 'cover_selected', 'cover_name', 'cover_size', 'cover_upload_area');
+
+  // 公开开关标签切换
+  var publicCheckbox = document.getElementById('is_public');
+  var toggleLabel = document.getElementById('toggle_label');
+  if (publicCheckbox && toggleLabel) {
+    publicCheckbox.addEventListener('change', function() {
+      toggleLabel.textContent = publicCheckbox.checked ? '公开' : '私有';
+    });
+  }
 })();
 </script>
 {% endblock %}

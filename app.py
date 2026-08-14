@@ -47,10 +47,12 @@ def load_works():
     try:
         with open(DATA_FILE, "r", encoding="utf-8") as f:
             works = json.load(f)
-        # 兼容旧数据：确保每个 work 都有 group 字段
+        # 兼容旧数据：确保每个 work 都有 group 和 is_public 字段
         for w in works:
             if "group" not in w:
                 w["group"] = DEFAULT_GROUP
+            if "is_public" not in w:
+                w["is_public"] = True
         return works
     except Exception:
         return []
@@ -152,6 +154,12 @@ def works_list():
     works = sorted(works, key=lambda x: x.get("created_at", ""), reverse=True)
     groups = load_groups()
     current_group = request.args.get("group", "")
+    role = session.get("role")
+
+    # 游客只能看到公开作品
+    if role == "guest":
+        works = [w for w in works if w.get("is_public", True)]
+
     # 统计各分组作品数
     group_counts = {}
     for w in works:
@@ -164,10 +172,10 @@ def works_list():
         filtered = works
     # AJAX 局部刷新：只返回作品网格片段
     if request.args.get("partial") == "1":
-        return render_template("works_grid.html", works=filtered)
+        return render_template("works_grid.html", works=filtered, user_role=role)
     return render_template("works.html", works=filtered, groups=groups,
                            current_group=current_group, group_counts=group_counts,
-                           total_count=len(works))
+                           total_count=len(works), user_role=role)
 
 @app.route("/works/<work_id>")
 def work_detail(work_id):
@@ -175,6 +183,11 @@ def work_detail(work_id):
     work = next((w for w in works if w["id"] == work_id), None)
     if not work:
         abort(404)
+    role = session.get("role")
+    # 私有作品：只有管理员可以查看
+    if not work.get("is_public", True) and role != "admin":
+        flash("该作品为私有，需要管理员权限查看", "error")
+        return redirect(url_for("works_list"))
     return render_template("work_detail.html", work=work)
 
 @app.route("/preview/<work_id>")
@@ -325,6 +338,7 @@ def upload():
         description = request.form.get("description", "").strip()
         remark = request.form.get("remark", "").strip()
         group = request.form.get("group", DEFAULT_GROUP).strip() or DEFAULT_GROUP
+        is_public = request.form.get("is_public") == "on"
         file = request.files.get("html_file")
         cover = request.files.get("cover_file")
 
@@ -375,6 +389,7 @@ def upload():
             "filename": new_filename,
             "cover": cover_filename,
             "original_name": filename,
+            "is_public": is_public,
             "created_at": datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         })
         save_works(works)
@@ -410,6 +425,7 @@ def edit_work(work_id):
         description = request.form.get("description", "").strip()
         remark = request.form.get("remark", "").strip()
         group = request.form.get("group", DEFAULT_GROUP).strip() or DEFAULT_GROUP
+        is_public = request.form.get("is_public") == "on"
         cover = request.files.get("cover_file")
         remove_cover = request.form.get("remove_cover") == "1"
 
@@ -427,6 +443,7 @@ def edit_work(work_id):
         work["description"] = description
         work["remark"] = remark
         work["group"] = group
+        work["is_public"] = is_public
 
         if remove_cover and work.get("cover"):
             old_cover_path = os.path.join(app.config["COVER_FOLDER"], work["cover"])

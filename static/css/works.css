@@ -488,6 +488,24 @@ body {
   transform: translateY(-4px) scale(1.01);
 }
 
+.work-private-badge {
+  position: absolute;
+  top: 12px;
+  left: 12px;
+  z-index: 10;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 8px;
+  background: rgba(239, 68, 68, 0.9);
+  color: white;
+  font-size: 11px;
+  font-weight: 600;
+  border-radius: 6px;
+  backdrop-filter: blur(4px);
+  box-shadow: 0 2px 8px rgba(239, 68, 68, 0.3);
+}
+
 .work-cover {
   position: relative;
   width: 100%;

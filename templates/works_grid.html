@@ -6,6 +6,15 @@
     <a href="{{ url_for('work_detail', work_id=work.id) }}"
        class="work-card"
        data-delay="{{ loop.index0 * 80 }}">
+      {% if user_role == 'admin' and not work.is_public %}
+      <div class="work-private-badge" title="私有作品">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
+          <path d="M7 11V7a5 5 0 0110 0v4"/>
+        </svg>
+        私有
+      </div>
+      {% endif %}
       {% if work.cover %}
       <div class="work-cover">
         <img src="{{ url_for('static', filename='covers/' + work.cover) }}" alt="{{ work.title }}"

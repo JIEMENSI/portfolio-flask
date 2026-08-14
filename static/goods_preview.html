@@ -1,0 +1,976 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>福星上货 - 删除商品</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: "Segoe UI", "Microsoft YaHei", "PingFang SC", sans-serif;
+      font-size: 13px;
+      color: #333;
+      background: #f0f2f5;
+      height: 100vh;
+      overflow: hidden;
+      display: flex;
+    }
+    /* ===== 左侧导航 ===== */
+    .sidebar {
+      width: 200px;
+      background: #fff;
+      border-right: 1px solid #e8e8e8;
+      display: flex;
+      flex-direction: column;
+      flex-shrink: 0;
+    }
+    .logo {
+      height: 64px;
+      display: flex;
+      align-items: center;
+      padding: 0 16px;
+      border-bottom: 1px solid #f0f0f0;
+    }
+    .logo-icon {
+      width: 36px; height: 36px;
+      background: linear-gradient(135deg, #00c4cc, #0096a0);
+      border-radius: 8px;
+      display: flex; align-items: center; justify-content: center;
+      color: #fff; font-weight: bold; font-size: 18px;
+      margin-right: 10px;
+    }
+    .logo-text { font-size: 16px; font-weight: 600; color: #1a1a1a; }
+    .nav-menu { flex: 1; overflow-y: auto; padding: 8px 0; }
+    .nav-item {
+      display: flex; align-items: center;
+      padding: 10px 20px;
+      cursor: pointer;
+      color: #595959;
+      transition: all 0.15s;
+      position: relative;
+    }
+    .nav-item:hover { background: #f5f7fa; color: #1890ff; }
+    .nav-item.active {
+      background: #e6f7ff;
+      color: #1890ff;
+      font-weight: 500;
+    }
+    .nav-item.active::before {
+      content: '';
+      position: absolute; left: 0; top: 0; bottom: 0;
+      width: 3px; background: #1890ff;
+    }
+    .nav-item .icon { width: 18px; margin-right: 10px; text-align: center; opacity: 0.7; }
+    .nav-group-title {
+      padding: 12px 20px 6px;
+      font-size: 12px; color: #8c8c8c;
+      display: flex; align-items: center; justify-content: space-between;
+    }
+    .nav-sub { padding-left: 20px; }
+    .nav-sub .nav-item { padding: 8px 20px; font-size: 13px; }
+    .hot-tag {
+      background: #ff4d4f; color: #fff;
+      font-size: 10px; padding: 1px 4px; border-radius: 2px;
+      margin-left: 6px;
+    }
+    .sidebar-footer {
+      padding: 12px 16px;
+      border-top: 1px solid #f0f0f0;
+      font-size: 12px; color: #8c8c8c;
+    }
+    /* ===== 主内容区 ===== */
+    .main {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+    .topbar {
+      height: 48px;
+      background: #fff;
+      border-bottom: 1px solid #e8e8e8;
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 0 16px;
+      gap: 12px;
+    }
+    .topbar-left { display: flex; align-items: center; gap: 12px; flex: 1; }
+    .topbar-right { display: flex; align-items: center; gap: 12px; }
+    .latest-msg {
+      display: flex; align-items: center; gap: 10px;
+      padding: 10px 16px; border-radius: 8px;
+      font-size: 13px; color: #333;
+      background: #fff;
+      border: 1px solid #e8e8e8;
+      box-shadow: 0 4px 16px rgba(0,0,0,0.12);
+      min-width: 320px; max-width: 500px;
+      overflow: hidden;
+      animation: fadeInMsg 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    @keyframes fadeInMsg {
+      from { opacity: 0; transform: translateX(20px); }
+      to { opacity: 1; transform: translateX(0); }
+    }
+    .latest-msg-icon { width: 18px; height: 18px; flex-shrink: 0; color: #52c41a; }
+    .latest-msg-text { flex: 1; font-weight: 500; }
+    .latest-msg-time { color: #999; font-size: 11px; flex-shrink: 0; }
+
+    /* 窗口按钮 */
+    .window-btns { display: flex; gap: 2px; }
+    .win-btn {
+      width: 28px; height: 28px; border-radius: 4px;
+      display: flex; align-items: center; justify-content: center;
+      color: #8c8c8c;
+      transition: background 0.15s, color 0.15s;
+    }
+    .win-btn:hover { background: #f5f5f5; color: #333; }
+    .win-close:hover { background: #ff4d4f; color: #fff; }
+    .btn {
+      height: 32px; padding: 0 16px;
+      border-radius: 4px; border: 1px solid #d9d9d9;
+      background: #fff; cursor: pointer;
+      font-size: 13px; color: #333;
+      display: inline-flex; align-items: center; gap: 4px;
+      transition: all 0.15s;
+    }
+    .btn:hover { border-color: #1890ff; color: #1890ff; }
+    .btn-primary {
+      background: #1890ff; border-color: #1890ff; color: #fff;
+    }
+    .btn-primary:hover { background: #40a9ff; border-color: #40a9ff; color: #fff; }
+    .btn-danger {
+      background: #fff; border-color: #ff4d4f; color: #ff4d4f;
+    }
+    .btn-danger:hover { background: #fff1f0; }
+    .btn:disabled { opacity: 0.5; cursor: not-allowed; }
+    .content {
+      flex: 1; overflow-y: auto; padding: 16px;
+      background: #f0f2f5;
+      display: flex;
+      flex-direction: column;
+    }
+    /* ===== 卡片布局 ===== */
+    .card-row {
+      display: flex; gap: 16px; margin-bottom: 16px;
+      flex-shrink: 0; align-items: stretch;
+    }
+    .card-row > .card { display: flex; flex-direction: column; }
+    .card {
+      background: #fff;
+      border-radius: 6px;
+      box-shadow: 0 1px 2px rgba(0,0,0,0.03);
+      border: 1px solid #f0f0f0;
+      padding: 16px;
+    }
+    .card-title {
+      font-size: 14px; font-weight: 600; color: #1a1a1a;
+      margin-bottom: 14px;
+      display: flex; align-items: center; gap: 6px;
+    }
+    .card-title::before {
+      content: ''; width: 3px; height: 14px; background: #1890ff; border-radius: 1px;
+    }
+    .form-row {
+      display: flex; align-items: center; margin-bottom: 12px;
+      flex-wrap: wrap; gap: 8px;
+    }
+    .form-label {
+      width: 70px; color: #595959; flex-shrink: 0;
+    }
+    .form-input, .form-select {
+      height: 28px; padding: 0 8px;
+      border: 1px solid #d9d9d9; border-radius: 4px;
+      font-size: 13px; outline: none;
+      transition: border 0.15s;
+    }
+    .form-input:focus, .form-select:focus { border-color: #1890ff; }
+    .form-input { width: 180px; }
+    .radio-group, .checkbox-group {
+      display: flex; align-items: center; gap: 16px; flex-wrap: wrap;
+    }
+    .radio-item, .checkbox-item {
+      display: flex; align-items: center; gap: 4px; cursor: pointer;
+    }
+    input[type="radio"], input[type="checkbox"] {
+      width: 14px; height: 14px; accent-color: #1890ff; cursor: pointer;
+    }
+    .range-input {
+      display: flex; align-items: center; gap: 6px;
+    }
+    .range-input input { width: 70px; }
+    /* ===== 表格区 ===== */
+    .table-card {
+      background: #fff;
+      border-radius: 6px;
+      border: 1px solid #f0f0f0;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      flex: 1;
+      min-height: 0;
+    }
+    .table-toolbar {
+      padding: 10px 16px;
+      display: flex; align-items: center; justify-content: space-between;
+      border-bottom: 1px solid #f0f0f0;
+      background: #fafafa;
+    }
+    .table-info { color: #595959; font-size: 12px; display: flex; gap: 16px; }
+    .table-actions { display: flex; gap: 8px; }
+    table {
+      width: 100%; border-collapse: collapse;
+    }
+    th {
+      background: #fafafa;
+      padding: 10px 12px;
+      text-align: left;
+      font-weight: 500; color: #595959;
+      border-bottom: 1px solid #f0f0f0;
+      white-space: nowrap;
+    }
+    td {
+      padding: 10px 12px;
+      border-bottom: 1px solid #f5f5f5;
+      vertical-align: top;
+    }
+    tr:hover td { background: #fafafa; }
+    .product-info { max-width: 320px; }
+    .product-title { color: #1a1a1a; margin-bottom: 4px; line-height: 1.4; }
+    .product-meta { font-size: 12px; color: #8c8c8c; }
+    .product-meta a { color: #1890ff; text-decoration: none; }
+    .status-tag {
+      display: inline-block; padding: 1px 6px;
+      border-radius: 2px; font-size: 12px;
+      background: #f5f5f5; color: #595959;
+    }
+    .result-deleted { color: #ff4d4f; font-weight: 500; }
+    .result-offline { color: #fa8c16; }
+    .result-invalid { color: #bfbfbf; font-style: italic; }
+    .op-link { color: #1890ff; cursor: pointer; margin-right: 8px; }
+    .op-link:hover { text-decoration: underline; }
+    /* 占位页 */
+    .placeholder-page {
+      display: none;
+      height: 100%;
+      align-items: center; justify-content: center;
+      flex-direction: column; color: #8c8c8c;
+      background: #f0f2f5;
+    }
+    .placeholder-page.show { display: flex; }
+    .placeholder-page h2 { margin-bottom: 12px; color: #595959; }
+    .tip-box {
+      margin-top: 20px; padding: 12px 20px;
+      background: #e6f7ff; border: 1px solid #91d5ff;
+      border-radius: 6px; color: #1890ff; font-size: 13px;
+      max-width: 480px; text-align: center;
+    }
+    /* 铃铛按钮 */
+    .bell-btn {
+      position: relative;
+      cursor: pointer; padding: 6px; border-radius: 6px;
+      display: flex; align-items: center; justify-content: center;
+      transition: all 0.15s;
+      color: #595959;
+    }
+    .bell-btn:hover { background: #f0f0f0; color: #1890ff; }
+    .bell-badge {
+      position: absolute; top: -2px; right: -2px;
+      min-width: 16px; height: 16px;
+      background: #ff4d4f; color: #fff;
+      border-radius: 8px; padding: 0 4px;
+      font-size: 10px; line-height: 16px; text-align: center;
+      font-weight: 600;
+      border: 2px solid #fff;
+    }
+
+    /* 消息中心面板 - 图三样式 */
+    .message-center {
+      position: fixed; top: 56px; right: 16px;
+      width: 360px; max-height: 520px;
+      background: #fff; border-radius: 8px;
+      box-shadow: 0 8px 30px rgba(0,0,0,0.18);
+      z-index: 9998; display: none;
+      flex-direction: column; overflow: hidden;
+      animation: slideIn 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+      border: 1px solid #f0f0f0;
+    }
+    .message-center.show { display: flex; }
+    .message-header {
+      padding: 12px 16px; border-bottom: 1px solid #f0f0f0;
+      display: flex; align-items: center; justify-content: space-between;
+      background: #fafafa;
+    }
+    .message-header h3 { font-size: 14px; font-weight: 600; color: #1a1a1a; margin: 0; }
+    .message-mark-all {
+      font-size: 12px; color: #1890ff; cursor: pointer;
+      background: none; border: none; padding: 0;
+    }
+    .message-mark-all:hover { color: #40a9ff; }
+    .message-list {
+      flex: 1; overflow-y: auto;
+      max-height: 400px;
+    }
+    .message-item {
+      display: flex; align-items: flex-start; gap: 10px;
+      padding: 12px 16px;
+      border-bottom: 1px solid #f5f5f5; cursor: pointer;
+      transition: background 0.15s;
+      position: relative;
+    }
+    .message-item:hover { background: #fafafa; }
+    .message-item.unread { background: #f0f9ff; }
+    .message-item.unread:hover { background: #e6f7ff; }
+    .message-item-icon {
+      width: 18px; height: 18px; flex-shrink: 0; margin-top: 2px;
+    }
+    .message-item.success .message-item-icon { color: #52c41a; }
+    .message-item.info .message-item-icon { color: #1890ff; }
+    .message-item.warning .message-item-icon { color: #fa8c16; }
+    .message-item.error .message-item-icon { color: #ff4d4f; }
+    .message-item-content { flex: 1; min-width: 0; padding-right: 16px; }
+    .message-item-title {
+      font-size: 13px; color: #333; line-height: 1.4;
+      margin-bottom: 2px;
+    }
+    .message-item-time { font-size: 11px; color: #bfbfbf; }
+    .message-item-dot {
+      position: absolute; top: 16px; right: 12px;
+      width: 6px; height: 6px; background: #ff4d4f;
+      border-radius: 50%;
+    }
+    .message-item.unread .message-item-dot { display: block; }
+    .message-item:not(.unread) .message-item-dot { display: none; }
+    .message-empty {
+      padding: 40px 20px; text-align: center; color: #bfbfbf;
+      font-size: 13px;
+    }
+    .message-footer {
+      padding: 10px 16px; border-top: 1px solid #f0f0f0;
+      display: flex; align-items: center; justify-content: space-between;
+      font-size: 12px; color: #595959;
+      background: #fafafa;
+    }
+    .message-footer-left { display: flex; align-items: center; gap: 8px; }
+    .message-footer button {
+      background: #fff; border: 1px solid #d9d9d9; padding: 3px 10px;
+      border-radius: 4px; cursor: pointer; font-size: 12px;
+      color: #595959;
+    }
+    .message-footer button:hover { border-color: #1890ff; color: #1890ff; }
+    .pagination { display: flex; align-items: center; gap: 8px; }
+    .pagination button {
+      background: #fff; border: 1px solid #d9d9d9; padding: 2px 8px;
+      border-radius: 4px; cursor: pointer; font-size: 12px;
+      color: #595959;
+    }
+    .pagination button:hover:not(:disabled) { border-color: #1890ff; color: #1890ff; }
+    .pagination button:disabled { opacity: 0.5; cursor: not-allowed; }
+    .pagination-info { color: #8c8c8c; font-size: 12px; }
+  </style>
+</head>
+<body>
+  <!-- 左侧导航 -->
+  <div class="sidebar">
+    <div class="logo">
+      <div class="logo-text">福星上货</div>
+    </div>
+    <div class="nav-menu">
+      <div class="nav-group-title">
+        <span>商品管理</span>
+      </div>
+      <div class="nav-sub">
+        <div class="nav-item" data-page="shelf" id="nav-shelf">商品上下架</div>
+        <div class="nav-item active" data-page="delete" id="nav-delete">删除商品</div>
+        <div class="nav-item" data-page="draft">草稿箱管理</div>
+        <div class="nav-item" data-page="recycle">回收站管理</div>
+        <div class="nav-item" data-page="clean">清理无流量</div>
+        <div class="nav-item" data-page="export">导出商品</div>
+        <div class="nav-item" data-page="batch">批量修改</div>
+      </div>
+    </div>
+    <div class="sidebar-footer">
+      联系客户经理<br>
+      <span style="font-size:11px">版本号:1.0.2.1438</span>
+    </div>
+  </div>
+
+  <!-- 主区域 -->
+  <div class="main">
+    <div class="topbar">
+      <div class="topbar-left">
+      </div>
+      <div class="topbar-right">
+        <div class="latest-msg" id="latest-msg" style="display:none">
+          <svg class="latest-msg-icon" id="latest-msg-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 11-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+          <span class="latest-msg-text" id="latest-msg-text"></span>
+          <span class="latest-msg-time" id="latest-msg-time"></span>
+        </div>
+        <div style="display:flex; align-items:center; gap:8px">
+          <div class="bell-btn" onclick="toggleMessageCenter()">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9"/>
+              <path d="M13.73 21a2 2 0 01-3.46 0"/>
+            </svg>
+            <span class="bell-badge" id="bell-badge" style="display:none">0</span>
+          </div>
+          <div class="window-btns">
+            <div class="win-btn win-min" title="最小化">
+              <svg width="14" height="14" viewBox="0 0 14 14"><rect x="2" y="6.5" width="10" height="1" fill="currentColor"/></svg>
+            </div>
+            <div class="win-btn win-max" title="最大化">
+              <svg width="14" height="14" viewBox="0 0 14 14"><rect x="2.5" y="2.5" width="9" height="9" fill="none" stroke="currentColor" stroke-width="1.2"/></svg>
+            </div>
+            <div class="win-btn win-close" title="关闭">
+              <svg width="14" height="14" viewBox="0 0 14 14"><line x1="3" y1="3" x2="11" y2="11" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/><line x1="11" y1="3" x2="3" y2="11" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 删除商品页面 -->
+    <div class="content" id="page-delete">
+      <!-- 创建任务 + 筛选 + 处理方式 -->
+      <div class="card-row">
+        <div class="card" style="flex:1.2">
+          <div class="card-title">创建任务</div>
+          <div class="form-row">
+            <span class="form-label">选择店铺</span>
+            <select class="form-select" id="shop-select" style="width:260px" onchange="onShopChange()">
+              <option value="tianwai">天外来物的小店</option>
+              <option value="yuedong">岳东小店</option>
+            </select>
+          </div>
+          <div style="background:#fafafa; border:1px solid #f0f0f0; border-radius:4px; padding:10px; font-size:12px; color:#595959; max-height:140px; overflow-y:auto; margin-top:8px" id="shop-log">
+            店铺：天外来物的小店 已经获取到第1页的100条数据，共15页<br>
+            已经获取到第2页的100条数据，共15页<br>
+            已经获取到第3页的100条数据，共15页<br>
+            已经获取到第4页的100条数据，共15页<br>
+            已经获取到第5页的100条数据，共15页<br>
+            已经获取到第6页的100条数据，共15页<br>
+            已经获取到第7页的100条数据，共15页<br>
+            已经获取到第8页的100条数据，共15页<br>
+            已经获取到第9页的100条数据，共15页<br>
+            已经获取到第10页的100条数据，共15页<br>
+            已经获取到第11页的100条数据，共15页<br>
+            已经获取到第12页的100条数据，共15页<br>
+            已经获取到第13页的100条数据，共15页
+          </div>
+        </div>
+        <div class="card" style="flex:1.1">
+          <div class="card-title">商品筛选</div>
+          <div class="form-row">
+            <span class="form-label">商品状态：</span>
+            <div class="radio-group">
+              <label class="radio-item"><input type="radio" name="status" value="all"> 全部</label>
+              <label class="radio-item"><input type="radio" name="status" value="sale"> 出售中</label>
+              <label class="radio-item"><input type="radio" name="status" value="warehouse" checked> 仓库中</label>
+            </div>
+          </div>
+          <div class="form-row">
+            <span class="form-label">标题：</span>
+            <input class="form-input" id="filter-title" placeholder='多个标题之间使用","间隔，支持模糊匹配' style="width:220px">
+          </div>
+          <div class="form-row">
+            <span class="form-label">ID：</span>
+            <input class="form-input" id="filter-id" placeholder="多个请使用,隔开" style="width:220px">
+          </div>
+          <div class="form-row">
+            <span class="form-label">价格区间：</span>
+            <div class="range-input">
+              <input class="form-input" type="number" id="price-min" value="0" style="width:70px">
+              <span>~</span>
+              <input class="form-input" type="number" id="price-max" value="99999" style="width:70px">
+            </div>
+          </div>
+          <div class="form-row">
+            <span class="form-label">销量区间：</span>
+            <div class="range-input">
+              <input class="form-input" type="number" id="sales-min" value="0" style="width:70px">
+              <span>~</span>
+              <input class="form-input" type="number" id="sales-max" value="99999" style="width:70px">
+            </div>
+          </div>
+          <div class="form-row">
+            <span class="form-label">创建时间：</span>
+            <input class="form-input" type="date" id="date-start" value="2026-06-01" style="width:130px">
+            <span>~</span>
+            <input class="form-input" type="date" id="date-end" value="2026-06-30" style="width:130px">
+          </div>
+          <div class="form-row">
+            <span class="form-label">请求设置：</span>
+            <span>线程数</span>
+            <input class="form-input" type="number" value="1" style="width:50px">
+            <span style="margin-left:12px">间隔时间（秒）</span>
+            <input class="form-input" type="number" value="1" style="width:50px">
+          </div>
+        </div>
+        <div class="card" style="flex:1; display:flex; flex-direction:column">
+          <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:12px">
+            <div class="card-title" style="margin-bottom:0">处理方式</div>
+            <div style="display:flex; gap:8px">
+              <button class="btn btn-primary" style="height:32px; padding:0 16px; font-size:13px" onclick="doQuery()">开始查询</button>
+              <button class="btn" style="height:32px; padding:0 16px; font-size:13px" onclick="collapseList()">收起列表</button>
+            </div>
+          </div>
+          <div class="checkbox-group" style="flex-direction:column; align-items:flex-start; gap:10px; flex:1">
+            <label class="checkbox-item"><input type="checkbox" id="auto-check" checked> 自动勾选，符合左侧条件的商品</label>
+            <label class="checkbox-item"><input type="checkbox"> 不自动勾选，有销量的商品</label>
+            <label class="checkbox-item"><input type="checkbox"> 不自动勾选，创建时间≤ 3 天的商品</label>
+            <label class="radio-item" style="margin-top:8px"><input type="radio" name="process" value="manual" checked> 查询后，手动处理</label>
+            <label class="radio-item"><input type="radio" name="process" value="offline"> 自动下架勾选的商品</label>
+            <label class="radio-item"><input type="radio" name="process" value="delete"> 自动删除勾选的商品</label>
+          </div>
+        </div>
+      </div>
+
+      <!-- 表格 -->
+      <div class="table-card">
+        <div class="table-toolbar">
+          <div class="table-info">
+            <label class="checkbox-item"><input type="checkbox" id="show-img"> 展示商品主图（可能会卡顿）</label>
+            <span>任务类型：<span id="task-type">查询后，手动处理</span></span>
+            <span>已读取：<b id="read-count">0</b> 个商品</span>
+            <span>已勾选：<b id="check-count">0</b> 个商品</span>
+          </div>
+          <div class="table-actions">
+            <button class="btn">下载模版</button>
+            <button class="btn">导入文件操作</button>
+            <button class="btn" style="color:#1890ff;border-color:#1890ff">点此查看导入文件教学</button>
+            <button class="btn btn-primary" onclick="doOffline()">下架商品</button>
+            <button class="btn btn-danger" onclick="doDelete()">删除商品</button>
+            <button class="btn" disabled>停止任务</button>
+          </div>
+        </div>
+        <div style="overflow-x:auto; flex:1; overflow-y:auto; min-height:300px">
+          <table>
+            <thead>
+              <tr>
+                <th style="width:50px"><input type="checkbox" id="check-all" onchange="toggleAll(this)"></th>
+                <th style="width:50px">序号</th>
+                <th>商品信息</th>
+                <th>来源店铺</th>
+                <th>创建时间</th>
+                <th>价格</th>
+                <th>销量</th>
+                <th>质量分</th>
+                <th>操作</th>
+                <th>结果</th>
+              </tr>
+            </thead>
+            <tbody id="product-tbody">
+              <!-- 动态填充 -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- 商品上下架占位页 -->
+    <div class="placeholder-page" id="page-shelf">
+      <h2>商品上下架（占位页面）</h2>
+      <p>这里只是演示跳转，实际功能未实现。</p>
+      <div class="tip-box">
+        请点击左侧「删除商品」返回。<br>
+        返回后你会看到：刚才查询的商品列表、勾选状态、店铺选择全部还在，没有丢失。
+      </div>
+    </div>
+  </div>
+
+  <!-- 消息中心面板 -->
+  <div class="message-center" id="message-center">
+    <div class="message-header">
+      <h3>消息中心</h3>
+      <button class="message-mark-all" onclick="markAllRead()">一键已读</button>
+    </div>
+    <div class="message-list" id="message-list"></div>
+    <div class="message-footer">
+      <div class="message-footer-left">
+        <span>共 <b id="msg-total">0</b> 条</span>
+        <div class="pagination" id="pagination">
+          <button onclick="prevPage()" id="prev-btn">上一页</button>
+          <span class="pagination-info" id="page-info">第 1 页</span>
+          <button onclick="nextPage()" id="next-btn">下一页</button>
+        </div>
+      </div>
+      <button onclick="clearAllMessages()">清空消息</button>
+    </div>
+  </div>
+
+  <script>
+    // ===== 模拟数据 =====
+    const mockProducts = [
+      { id: '3827640580440195467', title: '123设计感不规则包臀短裙女夏季立体花朵褶皱收腰纯欲气质吊带连衣裙', shop: '天外来物的小店', createTime: '2026-06-25 19:32', price: 125, sales: 0, score: 0, status: '仓库中' },
+      { id: '3827642755941793909', title: '1232026夏季新款女韩系温柔气质宽松V领薄款衬衫上衣高腰显瘦阔腿裤', shop: '天外来物的小店', createTime: '2026-06-25 19:32', price: 125, sales: 0, score: 0, status: '仓库中' },
+      { id: '3827638557728702868', title: '123法式纯欲风鱼骨收腰背心裙女装早春设计感重工气质显瘦包臀连衣裙', shop: '天外来物的小店', createTime: '2026-06-25 19:32', price: 125, sales: 0, score: 0, status: '仓库中' },
+      { id: '3827643028764491839', title: '123法式气质条纹挂脖连衣裙女夏季2025新款性感抹胸收腰短裙包臀', shop: '天外来物的小店', createTime: '2026-06-25 19:32', price: 125, sales: 0, score: 0, status: '仓库中' },
+      { id: '3827640698795065709', title: '123法式气质轻奢风性感吊带珠片网纱鱼骨连衣裙女包臀裙抹胸拼接', shop: '天外来物的小店', createTime: '2026-06-25 19:32', price: 125, sales: 0, score: 0, status: '仓库中' },
+      { id: '3827641122334455661', title: '123新中式国风改良旗袍连衣裙女夏季气质显瘦收腰短袖裙子', shop: '天外来物的小店', createTime: '2026-06-24 15:20', price: 168, sales: 2, score: 0, status: '仓库中' },
+      { id: '3827642233445566772', title: '123法式方领泡泡袖连衣裙女夏季高腰显瘦A字裙短款', shop: '天外来物的小店', createTime: '2026-06-24 14:11', price: 139, sales: 0, score: 0, status: '仓库中' },
+      { id: '3827643344556677883', title: '123甜酷风辣妹吊带裙女夏季修身包臀短裙纯欲风', shop: '天外来物的小店', createTime: '2026-06-23 18:05', price: 99, sales: 5, score: 0, status: '仓库中' }
+    ];
+
+    // 页面状态缓存（核心）
+    let pageState = {
+      shop: 'tianwai',
+      products: [],
+      checkedIds: new Set(),
+      deletedIds: new Set(),
+      offlineIds: new Set(),
+      queried: false,
+      filters: {}
+    };
+
+    // ===== 消息系统 =====
+    let messageList = [];
+    let msgIdCounter = 0;
+    let msgPage = 1;
+    const MSG_PAGE_SIZE = 10;
+    const displayIds = new Set();  // 正在 topbar 临时显示的消息ID
+
+    function getNowTime() {
+      const d = new Date();
+      const pad = (n) => String(n).padStart(2, '0');
+      return `${d.getFullYear()}/${pad(d.getMonth()+1)}/${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`;
+    }
+
+    function updateLatestMsg() {
+      const wrap = document.getElementById('latest-msg');
+      const msg = messageList.find(m => displayIds.has(m.id));
+      if (msg) {
+        document.getElementById('latest-msg-text').textContent = msg.title;
+        document.getElementById('latest-msg-time').textContent = msg.time;
+        // 根据类型设置图标和颜色
+        const icon = document.getElementById('latest-msg-icon');
+        const icons = {
+          info: '<circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/>',
+          success: '<path d="M22 11.08V12a10 10 0 11-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/>',
+          warning: '<path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/>',
+          error: '<circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/>'
+        };
+        const colors = { info: '#1890ff', success: '#52c41a', warning: '#fa8c16', error: '#ff4d4f' };
+        icon.innerHTML = icons[msg.type] || icons.info;
+        icon.style.color = colors[msg.type] || '#1890ff';
+        wrap.style.display = 'flex';
+      } else {
+        wrap.style.display = 'none';
+      }
+    }
+
+    function showToast(msg, type, title) {
+      type = type || 'info';
+      title = title || msg;
+      const id = ++msgIdCounter;
+
+      // 记录到消息列表（永久保存）
+      messageList.unshift({ id, type, title, time: getNowTime(), unread: true });
+
+      // 临时显示在 topbar 2秒
+      displayIds.add(id);
+      updateLatestMsg();
+      updateBellBadge();
+
+      // 2秒后从 topbar 消失（消息仍保留在消息中心）
+      setTimeout(() => {
+        displayIds.delete(id);
+        updateLatestMsg();
+      }, 2000);
+
+      // 更新消息中心
+      if (document.getElementById('message-center').classList.contains('show')) {
+        renderMessageCenter();
+      }
+    }
+
+    function updateBellBadge() {
+      const badge = document.getElementById('bell-badge');
+      if (messageList.length > 0) {
+        badge.textContent = messageList.length > 99 ? '99+' : messageList.length;
+        badge.style.display = 'inline-block';
+      } else {
+        badge.style.display = 'none';
+      }
+    }
+    function toggleMessageCenter() {
+      const panel = document.getElementById('message-center');
+      panel.classList.toggle('show');
+      if (panel.classList.contains('show')) {
+        renderMessageCenter();
+      }
+    }
+
+    function renderMessageCenter() {
+      const list = document.getElementById('message-list');
+      const total = document.getElementById('msg-total');
+      total.textContent = messageList.length;
+
+      if (messageList.length === 0) {
+        list.innerHTML = '<div class="message-empty">暂无消息</div>';
+        document.getElementById('pagination').style.display = 'none';
+        return;
+      }
+
+      document.getElementById('pagination').style.display = 'flex';
+
+      // 分页
+      const totalPages = Math.ceil(messageList.length / MSG_PAGE_SIZE);
+      if (msgPage > totalPages) msgPage = totalPages;
+      const start = (msgPage - 1) * MSG_PAGE_SIZE;
+      const pageItems = messageList.slice(start, start + MSG_PAGE_SIZE);
+
+      const icons = {
+        info: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>',
+        success: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 11-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>',
+        warning: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>',
+        error: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>'
+      };
+
+      list.innerHTML = pageItems.map(m => `
+        <div class="message-item ${m.type} ${m.unread ? 'unread' : ''}" onclick="markMsgRead(${m.id})">
+          <div class="message-item-icon">${icons[m.type]}</div>
+          <div class="message-item-content">
+            <div class="message-item-title">${m.title}</div>
+            <div class="message-item-time">${m.time}</div>
+          </div>
+          ${m.unread ? '<div class="message-item-dot"></div>' : ''}
+        </div>
+      `).join('');
+
+      // 更新分页信息
+      document.getElementById('page-info').textContent = `第 ${msgPage} 页 / 共 ${totalPages} 页`;
+      document.getElementById('prev-btn').disabled = msgPage <= 1;
+      document.getElementById('next-btn').disabled = msgPage >= totalPages;
+    }
+
+    function prevPage() {
+      if (msgPage > 1) { msgPage--; renderMessageCenter(); }
+    }
+
+    function nextPage() {
+      const totalPages = Math.ceil(messageList.length / MSG_PAGE_SIZE);
+      if (msgPage < totalPages) { msgPage++; renderMessageCenter(); }
+    }
+
+    function markMsgRead(id) {
+      const msg = messageList.find(m => m.id === id);
+      if (msg) {
+        msg.unread = false;
+        renderMessageCenter();
+        updateBellBadge();
+        updateLatestMsg();
+      }
+    }
+
+    function markAllRead() {
+      messageList.forEach(m => m.unread = false);
+      renderMessageCenter();
+      updateBellBadge();
+      updateLatestMsg();
+    }
+
+    function clearAllMessages() {
+      messageList = [];
+      displayIds.clear();
+      msgPage = 1;
+      renderMessageCenter();
+      updateBellBadge();
+      updateLatestMsg();
+    }
+
+    // 点击面板外部关闭
+    document.addEventListener('click', function(e) {
+      const panel = document.getElementById('message-center');
+      const bell = document.querySelector('.bell-btn');
+      if (!panel.contains(e.target) && !bell.contains(e.target)) {
+        panel.classList.remove('show');
+      }
+    });
+
+    function renderResult(result) {
+      if (!result) return '';
+      if (result === '已删除') return '<span class="result-deleted">已删除</span>';
+      if (result === '下架') return '<span class="result-offline">下架</span>';
+      if (result === '查询失败') return '<span class="result-invalid">查询失败</span>';
+      return result;
+    }
+
+    function renderTable() {
+      const tbody = document.getElementById('product-tbody');
+      tbody.innerHTML = '';
+      pageState.products.forEach((p, idx) => {
+        const checked = pageState.checkedIds.has(p.id);
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+          <td><input type="checkbox" class="row-check" data-id="${p.id}" ${checked ? 'checked' : ''} onchange="onCheckChange('${p.id}', this.checked)"></td>
+          <td>${idx + 1}</td>
+          <td class="product-info">
+            <div class="product-title">${p.title}</div>
+            <div class="product-meta">商品ID：<a href="#">${p.id}</a><br>商品状态：${p.status}</div>
+          </td>
+          <td>${p.shop}</td>
+          <td>${p.createTime}</td>
+          <td>${p.price}</td>
+          <td>${p.sales}</td>
+          <td>${p.score}</td>
+          <td>
+            <span class="op-link" onclick="markOffline('${p.id}')">下架</span>
+            <span class="op-link" style="color:#ff4d4f" onclick="markDelete('${p.id}')">删除</span>
+          </td>
+          <td class="result-cell" id="result-${p.id}">${renderResult(p.result)}</td>
+        `;
+        tbody.appendChild(tr);
+      });
+      updateCounts();
+    }
+
+    function updateCounts() {
+      document.getElementById('read-count').textContent = pageState.products.length;
+      document.getElementById('check-count').textContent = pageState.checkedIds.size;
+      const all = document.getElementById('check-all');
+      all.checked = pageState.products.length > 0 && pageState.checkedIds.size === pageState.products.length;
+    }
+
+    function doQuery() {
+      // 模拟查询：过滤已删除的商品
+      pageState.products = mockProducts
+        .filter(p => !pageState.deletedIds.has(p.id))
+        .map(p => ({
+          ...p,
+          result: pageState.offlineIds.has(p.id) ? '下架' : '',
+          offline: pageState.offlineIds.has(p.id)
+        }));
+      pageState.checkedIds = new Set();
+      if (document.getElementById('auto-check').checked) {
+        pageState.products.forEach(p => pageState.checkedIds.add(p.id));
+      }
+      pageState.queried = true;
+      pageState.shop = document.getElementById('shop-select').value;
+      renderTable();
+      if (pageState.products.length === 0) {
+        showToast('当前无可操作商品（已全部删除）', 'warning', '查询完成');
+      } else {
+        showToast('共 ' + pageState.products.length + ' 条商品', 'success', '查询完成');
+      }
+    }
+
+    function onCheckChange(id, checked) {
+      if (checked) pageState.checkedIds.add(id);
+      else pageState.checkedIds.delete(id);
+      updateCounts();
+    }
+
+    function toggleAll(el) {
+      if (el.checked) {
+        pageState.products.forEach(p => pageState.checkedIds.add(p.id));
+      } else {
+        pageState.checkedIds.clear();
+      }
+      renderTable();
+    }
+
+    function markDelete(id) {
+      pageState.deletedIds.add(id);
+      pageState.checkedIds.delete(id);
+      // 从当前列表中移除该商品，或标为已删除
+      const product = pageState.products.find(p => p.id === id);
+      if (product) {
+        product.result = '已删除';
+      }
+      const cell = document.getElementById('result-' + id);
+      if (cell) {
+        cell.innerHTML = '<span class="result-deleted">已删除</span>';
+      }
+      updateCounts();
+    }
+
+    function markOffline(id) {
+      pageState.offlineIds.add(id);
+      const product = pageState.products.find(p => p.id === id);
+      if (product) {
+        product.result = '下架';
+        product.offline = true;
+      }
+      const cell = document.getElementById('result-' + id);
+      if (cell) {
+        cell.innerHTML = '<span class="result-offline">下架</span>';
+      }
+    }
+
+    function doDelete() {
+      if (pageState.checkedIds.size === 0) {
+        showToast('请先勾选要删除的商品');
+        return;
+      }
+      const ids = [...pageState.checkedIds];
+      ids.forEach(id => markDelete(id));
+      pageState.checkedIds = new Set();
+      renderTable();
+      showToast(ids.length + ' 个商品已删除', 'success', '删除成功');
+    }
+
+    function doOffline() {
+      if (pageState.checkedIds.size === 0) {
+        showToast('请先勾选要下架的商品');
+        return;
+      }
+      const ids = [...pageState.checkedIds];
+      ids.forEach(id => markOffline(id));
+      showToast('已下架 ' + ids.length + ' 个商品');
+    }
+
+    function collapseList() {
+      pageState.products = [];
+      pageState.checkedIds.clear();
+      pageState.queried = false;
+      // 注意：不清除 deletedIds 和 offlineIds，保留删除记录
+      renderTable();
+      showToast('列表已收起', 'info', '操作完成');
+    }
+
+    function onShopChange() {
+      // 切换店铺时清空当前（演示简化），保留删除记录
+      pageState.products = [];
+      pageState.checkedIds.clear();
+      pageState.queried = false;
+      renderTable();
+    }
+
+    // ===== 导航切换（核心演示） =====
+    function switchPage(page) {
+      document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
+      const nav = document.querySelector(`.nav-item[data-page="${page}"]`);
+      if (nav) nav.classList.add('active');
+
+      if (page === 'delete') {
+        document.getElementById('page-delete').style.display = 'block';
+        document.getElementById('page-shelf').classList.remove('show');
+        // 恢复状态
+        if (pageState.queried) {
+          document.getElementById('shop-select').value = pageState.shop;
+          renderTable();
+          showToast('已恢复 ' + pageState.products.length + ' 条商品记录', 'info', '状态已缓存');
+        }
+      } else if (page === 'shelf') {
+        document.getElementById('page-delete').style.display = 'none';
+        document.getElementById('page-shelf').classList.add('show');
+        showToast('已切换到商品上下架', 'info', '页面切换');
+      } else {
+        // 其他菜单也先跳到占位
+        document.getElementById('page-delete').style.display = 'none';
+        document.getElementById('page-shelf').classList.add('show');
+        document.querySelector('#page-shelf h2').textContent = '功能占位页（' + page + '）';
+        showToast('已切换菜单', 'info', '页面切换');
+      }
+    }
+
+    document.querySelectorAll('.nav-item').forEach(el => {
+      el.addEventListener('click', () => {
+        const page = el.getAttribute('data-page');
+        if (page) switchPage(page);
+      });
+    });
+
+    // 初始空表
+    renderTable();
+  </script>
+</body>
+</html>
