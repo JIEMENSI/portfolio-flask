@@ -3,6 +3,7 @@ import os
 import json
 import uuid
 import time
+import gzip
 from datetime import datetime
 from functools import wraps
 from werkzeug.utils import secure_filename
@@ -21,6 +22,46 @@ app.config["AVATAR_FOLDER"] = os.path.join(BASE_DIR, "static", "avatars")
 app.config["MAX_CONTENT_LENGTH"] = 16 * 1024 * 1024  # 16MB max
 ALLOWED_COVER_EXT = {".png", ".jpg", ".jpeg", ".gif", ".webp"}
 ALLOWED_AVATAR_EXT = {".png", ".jpg", ".jpeg", ".gif", ".webp"}
+app.config["SEND_FILE_MAX_AGE_DEFAULT"] = 60 * 60 * 24 * 7  # 静态资源默认缓存 7 天
+app.config["SESSION_COOKIE_HTTPONLY"] = True
+app.config["SESSION_COOKIE_SAMESITE"] = "Lax"
+
+# 可压缩的文本类 Content-Type 前缀
+_COMPRESSIBLE_TYPES = ("text/", "application/json", "application/javascript", "image/svg+xml")
+
+@app.after_request
+def _after_request(resp):
+    """统一后处理：Gzip 压缩、缓存头、安全头"""
+    ct = resp.headers.get("Content-Type", "")
+
+    # 1) Gzip 压缩文本类响应（客户端支持、未被编码、内容>1KB 时才压缩）
+    if "gzip" in request.headers.get("Accept-Encoding", "").lower() and not resp.headers.get("Content-Encoding"):
+        if any(ct.startswith(t) for t in _COMPRESSIBLE_TYPES):
+            # direct_passthrough（如 send_from_directory 提供的静态文件）需先物化才能读取
+            if resp.direct_passthrough:
+                data = b"".join(resp.response)
+                resp.direct_passthrough = False
+            else:
+                data = resp.get_data()
+            if len(data) >= 1024:
+                compressed = gzip.compress(data, compresslevel=6)
+                if len(compressed) < len(data):
+                    resp.set_data(compressed)
+                    resp.headers["Content-Encoding"] = "gzip"
+                    resp.headers["Content-Length"] = len(compressed)
+                    resp.headers["Vary"] = "Accept-Encoding"
+
+    # 2) 缓存头：静态资源长缓存，HTML 不缓存保证实时性
+    if request.path.startswith("/static/"):
+        if any(ct.startswith(t) for t in ("image/", "text/css", "application/javascript", "font/")):
+            resp.headers["Cache-Control"] = "public, max-age=604800"
+    elif ct.startswith("text/html"):
+        resp.headers["Cache-Control"] = "no-cache"
+
+    # 3) 安全头
+    resp.headers.setdefault("X-Content-Type-Options", "nosniff")
+    resp.headers.setdefault("Referrer-Policy", "strict-origin-when-cross-origin")
+    return resp
 
 # 管理员账号（支持多个）
 ADMIN_ACCOUNTS = [
@@ -41,12 +82,33 @@ os.makedirs(app.config["AVATAR_FOLDER"], exist_ok=True)
 os.makedirs(os.path.join(BASE_DIR, "data"), exist_ok=True)
 os.makedirs(os.path.join(BASE_DIR, "static", "css"), exist_ok=True)
 
-def load_works():
-    if not os.path.exists(DATA_FILE):
-        return []
+# ---- 内存缓存（按文件 mtime 失效，避免每次请求都读磁盘解析 JSON）----
+_file_cache = {}  # {path: {"mtime": float, "data": obj}}
+
+def _cached_load(path, parser, default):
+    """按 mtime 失效的缓存读取：文件未变则返回内存数据，否则重新读取解析"""
     try:
-        with open(DATA_FILE, "r", encoding="utf-8") as f:
-            works = json.load(f)
+        mtime = os.path.getmtime(path)
+    except OSError:
+        return default
+    entry = _file_cache.get(path)
+    if entry and entry["mtime"] == mtime:
+        return entry["data"]
+    try:
+        with open(path, "r", encoding="utf-8") as f:
+            data = parser(f)
+    except Exception:
+        return default
+    _file_cache[path] = {"mtime": mtime, "data": data}
+    return data
+
+def _invalidate(path):
+    """写入后主动失效缓存（双保险）"""
+    _file_cache.pop(path, None)
+
+def load_works():
+    def parser(f):
+        works = json.load(f)
         # 兼容旧数据：确保每个 work 都有 group 和 is_public 字段
         for w in works:
             if "group" not in w:
@@ -54,53 +116,53 @@ def load_works():
             if "is_public" not in w:
                 w["is_public"] = True
         return works
-    except Exception:
-        return []
+    return _cached_load(DATA_FILE, parser, [])
 
 def save_works(works):
     with open(DATA_FILE, "w", encoding="utf-8") as f:
         json.dump(works, f, ensure_ascii=False, indent=2)
+    _invalidate(DATA_FILE)
 
 def load_groups():
     """加载分组列表，若文件不存在返回默认分组"""
-    if not os.path.exists(GROUPS_FILE):
-        return [DEFAULT_GROUP]
-    try:
-        with open(GROUPS_FILE, "r", encoding="utf-8") as f:
-            groups = json.load(f)
+    def parser(f):
+        groups = json.load(f)
         if not groups or DEFAULT_GROUP not in groups:
             groups.insert(0, DEFAULT_GROUP)
         return groups
-    except Exception:
-        return [DEFAULT_GROUP]
+    return _cached_load(GROUPS_FILE, parser, [DEFAULT_GROUP])
 
 def save_groups(groups):
     with open(GROUPS_FILE, "w", encoding="utf-8") as f:
         json.dump(groups, f, ensure_ascii=False, indent=2)
+    _invalidate(GROUPS_FILE)
 
 def load_avatars():
     """加载头像映射 {username: avatar_filename}"""
-    if not os.path.exists(AVATARS_FILE):
-        return {}
-    try:
-        with open(AVATARS_FILE, "r", encoding="utf-8") as f:
-            return json.load(f)
-    except Exception:
-        return {}
+    def parser(f):
+        return json.load(f)
+    return _cached_load(AVATARS_FILE, parser, {})
 
 def save_avatars(avatars):
     with open(AVATARS_FILE, "w", encoding="utf-8") as f:
         json.dump(avatars, f, ensure_ascii=False, indent=2)
+    _invalidate(AVATARS_FILE)
 
-def get_avatar_url(username):
-    """获取账号头像URL（相对 static 路径）；未自定义则返回默认头像"""
+def get_avatar_info(username):
+    """返回 (头像相对 static 路径, 版本号)。
+    版本号用文件 mtime：头像未更换时命中浏览器缓存，避免每次导航都重新下载。"""
     if not username:
-        return DEFAULT_AVATAR
+        return DEFAULT_AVATAR, "1"
     avatars = load_avatars()
     fname = avatars.get(username)
-    if fname:
-        return f"avatars/{fname}"
-    return DEFAULT_AVATAR
+    if not fname:
+        return DEFAULT_AVATAR, "1"
+    full_path = os.path.join(app.config["AVATAR_FOLDER"], fname)
+    try:
+        version = str(int(os.path.getmtime(full_path)))
+    except OSError:
+        version = "1"
+    return f"avatars/{fname}", version
 
 def admin_required(f):
     @wraps(f)
@@ -126,10 +188,12 @@ def inject_user():
     role = session.get("role")
     if role == "admin":
         username = session.get("username", "")
+        avatar_url, avatar_version = get_avatar_info(username)
         return {
             "user_role": "admin",
             "display_name": mask_username(username),
-            "avatar_url": get_avatar_url(username),
+            "avatar_url": avatar_url,
+            "avatar_version": avatar_version,
             "uptime_seconds": uptime_seconds,
         }
     if role == "guest":
@@ -137,9 +201,10 @@ def inject_user():
             "user_role": "guest",
             "display_name": "游客114514",
             "avatar_url": DEFAULT_AVATAR,
+            "avatar_version": "1",
             "uptime_seconds": uptime_seconds,
         }
-    return {"user_role": None, "display_name": None, "avatar_url": None, "uptime_seconds": uptime_seconds}
+    return {"user_role": None, "display_name": None, "avatar_url": None, "avatar_version": "1", "uptime_seconds": uptime_seconds}
 
 @app.route("/")
 def index():
@@ -199,17 +264,13 @@ def preview(work_id):
     """直接提供上传的 HTML 文件内容"""
     works = load_works()
     work = next((w for w in works if w["id"] == work_id), None)
-    if not work:
+    if not work or not work.get("filename"):
         abort(404)
-    filename = work.get("filename")
-    if not filename:
+    filepath = os.path.join(app.config["UPLOAD_FOLDER"], work["filename"])
+    # 按 mtime 缓存文件内容，避免每次预览都读磁盘
+    html_content = _cached_load(filepath, lambda f: f.read(), None)
+    if html_content is None:
         abort(404)
-    filepath = os.path.join(app.config["UPLOAD_FOLDER"], filename)
-    if not os.path.exists(filepath):
-        abort(404)
-    # 读取文件内容并返回，确保 Content-Type 为 text/html
-    with open(filepath, "r", encoding="utf-8") as f:
-        html_content = f.read()
     return html_content, 200, {"Content-Type": "text/html; charset=utf-8"}
 
 @app.route("/login", methods=["GET", "POST"])
