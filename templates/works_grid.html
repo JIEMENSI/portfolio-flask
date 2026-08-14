@@ -1,0 +1,58 @@
+{# 作品网格片段 - 用于 AJAX 局部刷新，不含 base.html 框架 #}
+<div class="works-grid-inner" id="works_grid_inner">
+  {% if works %}
+  <div class="works-grid">
+    {% for work in works %}
+    <a href="{{ url_for('work_detail', work_id=work.id) }}"
+       class="work-card"
+       data-delay="{{ loop.index0 * 80 }}">
+      {% if work.cover %}
+      <div class="work-cover">
+        <img src="{{ url_for('static', filename='covers/' + work.cover) }}" alt="{{ work.title }}"
+             loading="lazy"
+             onerror="this.onerror=null;this.parentElement.className='work-empty-cover';this.parentElement.innerHTML='<div class=empty-icon-wrapper><svg class=w-10 h-10 fill=none stroke=currentColor viewBox=0 0 24 24><path stroke-linecap=round stroke-linejoin=round stroke-width=1.5 d=M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z/></svg></div>'">
+        <div class="work-cover-overlay">
+          <span class="view-badge">查看详情 →</span>
+        </div>
+      </div>
+      {% else %}
+      <div class="work-empty-cover">
+        <div class="empty-icon-wrapper">
+          <svg class="w-10 h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+          </svg>
+        </div>
+      </div>
+      {% endif %}
+      <div class="work-info">
+        <h3 class="work-name">{{ work.title }}</h3>
+        {% if work.description %}
+        <p class="work-desc">{{ work.description }}</p>
+        {% endif %}
+        <div class="work-footer">
+          <span class="work-meta">
+            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" style="display:inline;vertical-align:middle;">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
+            </svg>
+            {{ work.created_at }}
+          </span>
+          <span class="work-arrow">→</span>
+        </div>
+      </div>
+    </a>
+    {% endfor %}
+  </div>
+  {% else %}
+  <div class="card animate-scale-in">
+    <div class="card-body empty-state">
+      <div class="empty-icon-wrapper" style="width:80px;height:80px;margin:0 auto 1rem;">
+        <svg class="w-16 h-16 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1" d="M12 6v6m0 0v6m0-6h6m-6 0H6"/>
+        </svg>
+      </div>
+      <p style="margin-bottom:0.5rem;font-size:1.125rem;font-weight:600;color:#666;">该分组暂无作品</p>
+      <p style="margin-bottom:1.5rem;color:#999;">切换到其他分组看看吧</p>
+    </div>
+  </div>
+  {% endif %}
+</div>

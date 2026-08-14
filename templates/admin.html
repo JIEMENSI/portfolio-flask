@@ -41,10 +41,10 @@
         </svg>
         分组管理
       </span>
-      <form method="POST" action="{{ url_for('manage_groups') }}" style="display:flex;gap:0.5rem;align-items:center;">
+      <form method="POST" action="{{ url_for('manage_groups') }}" class="group-add-form">
         <input type="hidden" name="action" value="add">
         <input type="text" name="name" class="group-add-input" placeholder="输入新分组名称" required>
-        <button type="submit" class="btn btn-primary" style="padding:0.375rem 1rem;font-size:0.8125rem;">添加</button>
+        <button type="submit" class="btn btn-primary group-add-btn">添加</button>
       </form>
     </div>
     <div class="group-tags-list">
@@ -179,7 +179,6 @@
     margin-bottom: 2rem;
     padding: 2rem;
     background: rgba(255, 255, 255, 0.85);
-    backdrop-filter: blur(15px);
     border-radius: 1.5rem;
     border: 1px solid rgba(255, 255, 255, 0.8);
     box-shadow: 0 8px 32px rgba(124, 58, 237, 0.08);
@@ -264,6 +263,7 @@
     font-weight: 600;
     color: #333;
     border-bottom: 1px solid #f0f0f0;
+    gap: 0.5rem;
   }
   .table-count {
     font-size: 0.75rem;
@@ -271,6 +271,7 @@
     background: linear-gradient(135deg, rgba(124, 58, 237, 0.1), rgba(236, 72, 153, 0.1));
     border-radius: 9999px;
     color: #7c3aed;
+    flex-shrink: 0;
   }
   .table-wrapper {
     overflow-x: auto;
@@ -333,11 +334,11 @@
 
   /* 分组管理卡片样式 */
   .group-manage-card {
-    overflow: visible;
+    overflow: hidden;
   }
   .group-manage-header {
     display: flex;
-    flex-wrap: wrap;
+    flex-wrap: nowrap;
     align-items: center;
     justify-content: space-between;
     gap: 0.75rem;
@@ -347,6 +348,13 @@
     font-size: 0.9375rem;
     font-weight: 600;
     color: #333;
+    white-space: nowrap;
+  }
+  .group-add-form {
+    display: flex;
+    gap: 0.5rem;
+    align-items: center;
+    flex-shrink: 0;
   }
   .group-add-input {
     padding: 0.375rem 0.75rem;
@@ -356,9 +364,16 @@
     outline: none;
     transition: border-color 0.2s ease;
     width: 160px;
+    box-sizing: border-box;
   }
   .group-add-input:focus {
     border-color: #7c3aed;
+  }
+  .group-add-btn {
+    padding: 0.375rem 1rem;
+    font-size: 0.8125rem;
+    white-space: nowrap;
+    line-height: 1.5;
   }
   .group-tags-list {
     display: flex;

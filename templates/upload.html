@@ -65,8 +65,8 @@
         <label class="form-label">
           选择 HTML 文件 <span class="form-required">*</span>
         </label>
-        <div class="file-upload-area">
-          <div class="upload-placeholder">
+        <div class="file-upload-area" id="html_upload_area">
+          <div class="upload-placeholder" id="html_placeholder">
             <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
               <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/>
               <polyline points="17 8 12 3 7 8"/>
@@ -77,6 +77,20 @@
               <span class="upload-desc">或拖拽文件到此处</span>
             </div>
           </div>
+          <div class="file-selected-display" id="html_selected" style="display:none;">
+            <div class="selected-icon">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/>
+                <polyline points="14 2 14 8 20 8"/>
+                <polyline points="9 15 11 17 15 13"/>
+              </svg>
+            </div>
+            <div class="selected-info">
+              <span class="selected-name" id="html_name"></span>
+              <span class="selected-size" id="html_size"></span>
+            </div>
+            <span class="selected-status">已选择</span>
+          </div>
           <input type="file" id="html_file" name="html_file" accept=".html,.htm" required class="file-input-hidden">
         </div>
         <p class="form-hint">支持 .html / .htm 格式，最大 16MB</p>
@@ -84,8 +98,8 @@
 
       <div class="form-group">
         <label class="form-label">作品封面图</label>
-        <div class="file-upload-area cover-upload">
-          <div class="upload-placeholder">
+        <div class="file-upload-area cover-upload" id="cover_upload_area">
+          <div class="upload-placeholder" id="cover_placeholder">
             <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
               <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
               <circle cx="8.5" cy="8.5" r="1.5"/>
@@ -95,6 +109,20 @@
               <span class="upload-click">选择封面图片</span>
               <span class="upload-desc">建议使用正方形图片</span>
             </div>
+          </div>
+          <div class="file-selected-display" id="cover_selected" style="display:none;">
+            <div class="selected-icon">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
+                <circle cx="8.5" cy="8.5" r="1.5"/>
+                <polyline points="21 15 16 10 5 21"/>
+              </svg>
+            </div>
+            <div class="selected-info">
+              <span class="selected-name" id="cover_name"></span>
+              <span class="selected-size" id="cover_size"></span>
+            </div>
+            <span class="selected-status">已选择</span>
           </div>
           <input type="file" id="cover_file" name="cover_file" accept=".png,.jpg,.jpeg,.gif,.webp" class="file-input-hidden">
         </div>
@@ -214,5 +242,96 @@
     justify-content: center;
     gap: 0.5rem;
   }
+
+  /* 已选文件显示样式 */
+  .file-selected-display {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    width: 100%;
+    padding: 0.5rem;
+  }
+  .selected-icon {
+    width: 40px;
+    height: 40px;
+    background: linear-gradient(135deg, #7c3aed, #ec4899);
+    border-radius: 0.625rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #fff;
+    flex-shrink: 0;
+  }
+  .selected-info {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+  .selected-name {
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: #333;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .selected-size {
+    font-size: 0.75rem;
+    color: #999;
+  }
+  .selected-status {
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: #22c55e;
+    padding: 0.25rem 0.625rem;
+    background: rgba(34, 197, 94, 0.1);
+    border-radius: 9999px;
+    flex-shrink: 0;
+  }
+
+  /* 选中状态下的上传区域样式 */
+  .file-upload-area.has-file {
+    border-color: #7c3aed;
+    background: linear-gradient(135deg, rgba(124, 58, 237, 0.05), rgba(236, 72, 153, 0.05));
+    transform: none;
+  }
 </style>
+
+<script>
+(function(){
+  function formatFileSize(bytes) {
+    if (bytes < 1024) return bytes + ' B';
+    if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB';
+    return (bytes / 1024 / 1024).toFixed(1) + ' MB';
+  }
+
+  function setupFileInput(inputId, placeholderId, selectedId, nameId, sizeId, areaId) {
+    var input = document.getElementById(inputId);
+    if (!input) return;
+    input.addEventListener('change', function(e) {
+      var file = e.target.files[0];
+      if (file) {
+        var placeholder = document.getElementById(placeholderId);
+        var selected = document.getElementById(selectedId);
+        var area = document.getElementById(areaId);
+        var nameEl = document.getElementById(nameId);
+        var sizeEl = document.getElementById(sizeId);
+
+        if (placeholder) placeholder.style.display = 'none';
+        if (selected) {
+          selected.style.display = 'flex';
+          nameEl.textContent = file.name;
+          sizeEl.textContent = formatFileSize(file.size);
+        }
+        if (area) area.classList.add('has-file');
+      }
+    });
+  }
+
+  setupFileInput('html_file', 'html_placeholder', 'html_selected', 'html_name', 'html_size', 'html_upload_area');
+  setupFileInput('cover_file', 'cover_placeholder', 'cover_selected', 'cover_name', 'cover_size', 'cover_upload_area');
+})();
+</script>
 {% endblock %}

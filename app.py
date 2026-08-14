@@ -162,6 +162,9 @@ def works_list():
         filtered = [w for w in works if w.get("group", DEFAULT_GROUP) == current_group]
     else:
         filtered = works
+    # AJAX 局部刷新：只返回作品网格片段
+    if request.args.get("partial") == "1":
+        return render_template("works_grid.html", works=filtered)
     return render_template("works.html", works=filtered, groups=groups,
                            current_group=current_group, group_counts=group_counts,
                            total_count=len(works))
