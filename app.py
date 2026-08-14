@@ -106,6 +106,106 @@ def _invalidate(path):
     """写入后主动失效缓存（双保险）"""
     _file_cache.pop(path, None)
 
+
+# -------- 终极兜底：works.json 为空/损坏时，自动从 static/uploads 里的文件重建 --------
+# 这样即使 git reset / deploy 脚本意外把 works.json 清掉，只要 uploads 里 HTML 还在，
+# 一访问页面就会自动把元数据补回来，用户感知永远是"有作品的"。
+def _auto_rebuild_works_if_empty():
+    """load_works() 返回空 → 扫描上传目录重建作品元数据"""
+    import glob as _glob
+    try:
+        upload_dir = app.config["UPLOAD_FOLDER"]
+        cover_dir = app.config["COVER_FOLDER"]
+        html_files = sorted(
+            _glob.glob(os.path.join(upload_dir, "*.html")) +
+            _glob.glob(os.path.join(upload_dir, "*.htm"))
+        )
+        if not html_files:
+            return  # 确实没文件，无法重建
+        print(f"[AUTO-REBUILD] works.json 为空，扫描到 {len(html_files)} 个 HTML 文件，开始自动重建…")
+
+        # 先读一次已有 works（可能里面有部分数据），保留已有元数据
+        existing = []
+        if os.path.exists(DATA_FILE):
+            try:
+                with open(DATA_FILE, "r", encoding="utf-8") as f:
+                    existing = json.load(f)
+            except Exception:
+                existing = []
+        existing_by_id = {w.get("id", ""): w for w in existing}
+
+        # 扫描封面
+        cover_names = set()
+        if os.path.isdir(cover_dir):
+            for c in os.listdir(cover_dir):
+                cover_names.add(c.lower())
+
+        works = []
+        for f in html_files:
+            fname = os.path.basename(f)
+            wid = os.path.splitext(fname)[0]
+            try:
+                mtime = os.path.getmtime(f)
+                dt_str = datetime.fromtimestamp(mtime).strftime("%Y-%m-%d %H:%M:%S")
+            except OSError:
+                dt_str = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+
+            if wid in existing_by_id:
+                work = existing_by_id[wid]
+            else:
+                cover = ""
+                for ext in (".png", ".jpg", ".jpeg", ".gif", ".webp"):
+                    if (wid + ext).lower() in cover_names:
+                        cover = wid + ext
+                        break
+                work = {
+                    "id": wid,
+                    "title": f"作品 {wid[:8]}",
+                    "description": "",
+                    "remark": "",
+                    "group": DEFAULT_GROUP,
+                    "filename": fname,
+                    "original_name": fname,
+                    "cover": cover,
+                    "is_public": True,
+                    "created_at": dt_str,
+                }
+            work.setdefault("group", DEFAULT_GROUP)
+            work.setdefault("is_public", True)
+            work.setdefault("remark", "")
+            work.setdefault("description", "")
+            works.append(work)
+
+        works.sort(key=lambda x: x.get("created_at", ""), reverse=True)
+
+        # 写回 works.json
+        os.makedirs(os.path.join(BASE_DIR, "data"), exist_ok=True)
+        with open(DATA_FILE, "w", encoding="utf-8") as f:
+            json.dump(works, f, ensure_ascii=False, indent=2)
+        _invalidate(DATA_FILE)
+
+        # 同步更新 groups.json
+        groups = []
+        if os.path.exists(GROUPS_FILE):
+            try:
+                with open(GROUPS_FILE, "r", encoding="utf-8") as f:
+                    groups = json.load(f)
+            except Exception:
+                groups = []
+        for w in works:
+            g = w.get("group", DEFAULT_GROUP)
+            if g and g not in groups:
+                groups.append(g)
+        if DEFAULT_GROUP not in groups:
+            groups.insert(0, DEFAULT_GROUP)
+        with open(GROUPS_FILE, "w", encoding="utf-8") as f:
+            json.dump(groups, f, ensure_ascii=False, indent=2)
+        _invalidate(GROUPS_FILE)
+        print(f"[AUTO-REBUILD] ✅ 完成：{len(works)} 条作品 / {len(groups)} 个分组")
+    except Exception as e:
+        print(f"[AUTO-REBUILD] ❌ 失败: {e!r}")
+
+
 def load_works():
     def parser(f):
         works = json.load(f)
@@ -116,7 +216,12 @@ def load_works():
             if "is_public" not in w:
                 w["is_public"] = True
         return works
-    return _cached_load(DATA_FILE, parser, [])
+    result = _cached_load(DATA_FILE, parser, [])
+    # 兜底：数据为空 → 自动从 static/uploads 里的实际 HTML 文件重建元数据
+    if not result:
+        _auto_rebuild_works_if_empty()
+        result = _cached_load(DATA_FILE, parser, [])
+    return result
 
 def save_works(works):
     with open(DATA_FILE, "w", encoding="utf-8") as f:
