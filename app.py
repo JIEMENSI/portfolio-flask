@@ -107,24 +107,37 @@ def _invalidate(path):
     _file_cache.pop(path, None)
 
 
-# -------- 终极兜底：works.json 为空/损坏时，自动从 static/uploads 里的文件重建 --------
-# 这样即使 git reset / deploy 脚本意外把 works.json 清掉，只要 uploads 里 HTML 还在，
-# 一访问页面就会自动把元数据补回来，用户感知永远是"有作品的"。
-def _auto_rebuild_works_if_empty():
-    """load_works() 返回空 → 扫描上传目录重建作品元数据"""
+# -------- 终极兜底：works.json 数据缺失/损坏时，自动从 static/uploads 里的文件重建 --------
+# 触发条件（满足任一就会自动校验并补齐）：
+#   1) load_works() 返回空
+#   2) works.json 的作品数量 < static/uploads 里实际的 HTML 文件数量（典型竞态覆盖场景）
+# 重建策略：
+#   * 保留已有作品的全部元数据（标题/分组/备注/is_public/封面/时间等）
+#   * 只把 works.json 里"缺失的作品（根据文件id匹配）"补回来
+#   * 全程使用文件锁（Linux fcntl / Windows 无），避免多 WSGI worker 并发写互相覆盖
+def _count_disk_html_files():
+    """统计 static/uploads 里的 HTML/HTM 文件总数（无需加锁，纯读）"""
     import glob as _glob
+    upload_dir = app.config["UPLOAD_FOLDER"]
+    html_files = _glob.glob(os.path.join(upload_dir, "*.html")) + \
+                 _glob.glob(os.path.join(upload_dir, "*.htm"))
+    return len(html_files)
+
+
+def _ensure_works_consistency(force=False):
+    """校验 works.json 与磁盘上传文件一致；缺失作品自动补齐"""
+    import glob as _glob
+    upload_dir = app.config["UPLOAD_FOLDER"]
+    cover_dir = app.config["COVER_FOLDER"]
     try:
-        upload_dir = app.config["UPLOAD_FOLDER"]
-        cover_dir = app.config["COVER_FOLDER"]
+        # 先快速判断：不用锁也不重建，除非需要
         html_files = sorted(
             _glob.glob(os.path.join(upload_dir, "*.html")) +
             _glob.glob(os.path.join(upload_dir, "*.htm"))
         )
-        if not html_files:
-            return  # 确实没文件，无法重建
-        print(f"[AUTO-REBUILD] works.json 为空，扫描到 {len(html_files)} 个 HTML 文件，开始自动重建…")
-
-        # 先读一次已有 works（可能里面有部分数据），保留已有元数据
+        disk_count = len(html_files)
+        if disk_count == 0:
+            return
         existing = []
         if os.path.exists(DATA_FILE):
             try:
@@ -132,76 +145,113 @@ def _auto_rebuild_works_if_empty():
                     existing = json.load(f)
             except Exception:
                 existing = []
-        existing_by_id = {w.get("id", ""): w for w in existing}
-
-        # 扫描封面
-        cover_names = set()
-        if os.path.isdir(cover_dir):
-            for c in os.listdir(cover_dir):
-                cover_names.add(c.lower())
-
-        works = []
-        for f in html_files:
-            fname = os.path.basename(f)
-            wid = os.path.splitext(fname)[0]
+        # 无作品或作品数明显少于磁盘文件数 → 需要补齐 / 重建
+        if not force and len(existing) >= disk_count:
+            return
+        # === 进入需要重建的阶段：拿锁防并发 ===
+        lock_path = os.path.join(BASE_DIR, "data", ".rebuild.lock")
+        os.makedirs(os.path.dirname(lock_path), exist_ok=True)
+        lock_fp = None
+        try:
+            lock_fp = open(lock_path, "w")
             try:
-                mtime = os.path.getmtime(f)
-                dt_str = datetime.fromtimestamp(mtime).strftime("%Y-%m-%d %H:%M:%S")
-            except OSError:
-                dt_str = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+                import fcntl
+                fcntl.flock(lock_fp.fileno(), fcntl.LOCK_EX)
+            except (ImportError, OSError):
+                pass  # Windows 没 fcntl：直接继续
+            # 拿锁后再读一次 works.json，避免和刚写完锁的 worker 重复工作
+            if os.path.exists(DATA_FILE):
+                try:
+                    with open(DATA_FILE, "r", encoding="utf-8") as f:
+                        existing = json.load(f)
+                except Exception:
+                    existing = []
+            existing_by_id = {w.get("id", ""): w for w in existing}
+            if not force and len(existing_by_id) >= disk_count:
+                return
 
-            if wid in existing_by_id:
-                work = existing_by_id[wid]
-            else:
-                cover = ""
-                for ext in (".png", ".jpg", ".jpeg", ".gif", ".webp"):
-                    if (wid + ext).lower() in cover_names:
-                        cover = wid + ext
-                        break
-                work = {
-                    "id": wid,
-                    "title": f"作品 {wid[:8]}",
-                    "description": "",
-                    "remark": "",
-                    "group": DEFAULT_GROUP,
-                    "filename": fname,
-                    "original_name": fname,
-                    "cover": cover,
-                    "is_public": True,
-                    "created_at": dt_str,
-                }
-            work.setdefault("group", DEFAULT_GROUP)
-            work.setdefault("is_public", True)
-            work.setdefault("remark", "")
-            work.setdefault("description", "")
-            works.append(work)
+            print(f"[AUTO-REBUILD] works 数量 {len(existing_by_id)} < 磁盘 HTML 文件 {disk_count}，开始自动补齐…")
 
-        works.sort(key=lambda x: x.get("created_at", ""), reverse=True)
+            # 扫描封面
+            cover_names = set()
+            if os.path.isdir(cover_dir):
+                for c in os.listdir(cover_dir):
+                    cover_names.add(c.lower())
 
-        # 写回 works.json
-        os.makedirs(os.path.join(BASE_DIR, "data"), exist_ok=True)
-        with open(DATA_FILE, "w", encoding="utf-8") as f:
-            json.dump(works, f, ensure_ascii=False, indent=2)
-        _invalidate(DATA_FILE)
+            works = []
+            added_cnt = 0
+            for f in html_files:
+                fname = os.path.basename(f)
+                wid = os.path.splitext(fname)[0]
+                try:
+                    mtime = os.path.getmtime(f)
+                    dt_str = datetime.fromtimestamp(mtime).strftime("%Y-%m-%d %H:%M:%S")
+                except OSError:
+                    dt_str = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
-        # 同步更新 groups.json
-        groups = []
-        if os.path.exists(GROUPS_FILE):
+                if wid in existing_by_id:
+                    work = existing_by_id[wid]
+                else:
+                    cover = ""
+                    for ext in (".png", ".jpg", ".jpeg", ".gif", ".webp"):
+                        if (wid + ext).lower() in cover_names:
+                            cover = wid + ext
+                            break
+                    work = {
+                        "id": wid,
+                        "title": f"作品 {wid[:8]}",
+                        "description": "",
+                        "remark": "",
+                        "group": DEFAULT_GROUP,
+                        "filename": fname,
+                        "original_name": fname,
+                        "cover": cover,
+                        "is_public": True,
+                        "created_at": dt_str,
+                    }
+                    added_cnt += 1
+                work.setdefault("group", DEFAULT_GROUP)
+                work.setdefault("is_public", True)
+                work.setdefault("remark", "")
+                work.setdefault("description", "")
+                works.append(work)
+
+            works.sort(key=lambda x: x.get("created_at", ""), reverse=True)
+
+            # 写回 works.json
+            os.makedirs(os.path.join(BASE_DIR, "data"), exist_ok=True)
+            with open(DATA_FILE, "w", encoding="utf-8") as f:
+                json.dump(works, f, ensure_ascii=False, indent=2)
+            _invalidate(DATA_FILE)
+
+            # 同步更新 groups.json
+            groups = []
+            if os.path.exists(GROUPS_FILE):
+                try:
+                    with open(GROUPS_FILE, "r", encoding="utf-8") as f:
+                        groups = json.load(f)
+                except Exception:
+                    groups = []
+            for w in works:
+                g = w.get("group", DEFAULT_GROUP)
+                if g and g not in groups:
+                    groups.append(g)
+            if DEFAULT_GROUP not in groups:
+                groups.insert(0, DEFAULT_GROUP)
+            with open(GROUPS_FILE, "w", encoding="utf-8") as f:
+                json.dump(groups, f, ensure_ascii=False, indent=2)
+            _invalidate(GROUPS_FILE)
+            print(f"[AUTO-REBUILD] ✅ 完成：补齐 {added_cnt} 条新作品，总计 {len(works)} 条作品 / {len(groups)} 个分组")
+        finally:
             try:
-                with open(GROUPS_FILE, "r", encoding="utf-8") as f:
-                    groups = json.load(f)
+                import fcntl as _f
+                _f.flock(lock_fp.fileno(), _f.LOCK_UN)
             except Exception:
-                groups = []
-        for w in works:
-            g = w.get("group", DEFAULT_GROUP)
-            if g and g not in groups:
-                groups.append(g)
-        if DEFAULT_GROUP not in groups:
-            groups.insert(0, DEFAULT_GROUP)
-        with open(GROUPS_FILE, "w", encoding="utf-8") as f:
-            json.dump(groups, f, ensure_ascii=False, indent=2)
-        _invalidate(GROUPS_FILE)
-        print(f"[AUTO-REBUILD] ✅ 完成：{len(works)} 条作品 / {len(groups)} 个分组")
+                pass
+            try:
+                lock_fp and lock_fp.close()
+            except Exception:
+                pass
     except Exception as e:
         print(f"[AUTO-REBUILD] ❌ 失败: {e!r}")
 
@@ -217,10 +267,17 @@ def load_works():
                 w["is_public"] = True
         return works
     result = _cached_load(DATA_FILE, parser, [])
-    # 兜底：数据为空 → 自动从 static/uploads 里的实际 HTML 文件重建元数据
+    # 兜底：空 或 数量明显不够 → 与磁盘上传文件做一致性补齐
     if not result:
-        _auto_rebuild_works_if_empty()
+        _ensure_works_consistency(force=True)
+        _invalidate(DATA_FILE)
         result = _cached_load(DATA_FILE, parser, [])
+    else:
+        disk_count = _count_disk_html_files()
+        if len(result) < disk_count:
+            _ensure_works_consistency(force=False)
+            _invalidate(DATA_FILE)
+            result = _cached_load(DATA_FILE, parser, [])
     return result
 
 def save_works(works):
