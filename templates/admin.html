@@ -326,10 +326,13 @@
   
   .table-row {
     transition: all 0.3s ease;
+    position: relative;
   }
   .table-row:hover {
     background: linear-gradient(90deg, rgba(124, 58, 237, 0.03), rgba(236, 72, 153, 0.03)) !important;
-    transform: scale(1.01);
+  }
+  .table-row.dropdown-open {
+    z-index: 999;
   }
   
   .thumb-empty {
@@ -735,7 +738,7 @@
   // 全局点击关闭分组编辑面板
   document.addEventListener('click', function(e) {
     document.querySelectorAll('.inline-group-edit.open').forEach(function(el) {
-      if (!el.contains(e.target)) el.classList.remove('open');
+      if (!el.contains(e.target)) { el.classList.remove('open'); el.closest('tr').classList.remove('dropdown-open'); }
     });
   });
 
@@ -751,14 +754,18 @@
     trigger.addEventListener('click', function(e) {
       e.stopPropagation();
       document.querySelectorAll('.inline-group-edit.open').forEach(function(o) {
-        if (o !== editor) o.classList.remove('open');
+        if (o !== editor) { o.classList.remove('open'); o.closest('tr').classList.remove('dropdown-open'); }
       });
       document.querySelectorAll('.inline-status-edit.open').forEach(function(o) {
-        o.classList.remove('open');
+        o.classList.remove('open'); o.closest('tr').classList.remove('dropdown-open');
       });
       editor.classList.toggle('open');
+      var row = editor.closest('tr');
       if (editor.classList.contains('open')) {
+        if (row) row.classList.add('dropdown-open');
         setTimeout(function() { input.focus(); input.select(); }, 50);
+      } else {
+        if (row) row.classList.remove('dropdown-open');
       }
     });
 
@@ -779,6 +786,7 @@
         submitGroup(val);
       } else if (e.key === 'Escape') {
         editor.classList.remove('open');
+        editor.closest('tr').classList.remove('dropdown-open');
       }
     });
 
@@ -796,10 +804,12 @@
       var current = editor.getAttribute('data-current');
       if (group === current) {
         editor.classList.remove('open');
+        editor.closest('tr').classList.remove('dropdown-open');
         return;
       }
       editor.classList.add('saving');
       editor.classList.remove('open');
+      editor.closest('tr').classList.remove('dropdown-open');
       fetch('{{ url_for("update_group", work_id="__WID__") }}'.replace('__WID__', workId), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -846,7 +856,7 @@
   // 全局点击关闭状态面板
   document.addEventListener('click', function(e) {
     document.querySelectorAll('.inline-status-edit.open').forEach(function(el) {
-      if (!el.contains(e.target)) el.classList.remove('open');
+      if (!el.contains(e.target)) { el.classList.remove('open'); el.closest('tr').classList.remove('dropdown-open'); }
     });
   });
 
@@ -859,12 +869,18 @@
     trigger.addEventListener('click', function(e) {
       e.stopPropagation();
       document.querySelectorAll('.inline-status-edit.open').forEach(function(o) {
-        if (o !== editor) o.classList.remove('open');
+        if (o !== editor) { o.classList.remove('open'); o.closest('tr').classList.remove('dropdown-open'); }
       });
       document.querySelectorAll('.inline-group-edit.open').forEach(function(o) {
-        o.classList.remove('open');
+        o.classList.remove('open'); o.closest('tr').classList.remove('dropdown-open');
       });
       editor.classList.toggle('open');
+      var row = editor.closest('tr');
+      if (editor.classList.contains('open')) {
+        if (row) row.classList.add('dropdown-open');
+      } else {
+        if (row) row.classList.remove('dropdown-open');
+      }
     });
 
     options.forEach(function(opt) {
@@ -878,10 +894,12 @@
       var current = editor.getAttribute('data-current');
       if (publicVal === current) {
         editor.classList.remove('open');
+        editor.closest('tr').classList.remove('dropdown-open');
         return;
       }
       editor.classList.add('saving');
       editor.classList.remove('open');
+      editor.closest('tr').classList.remove('dropdown-open');
       fetch('{{ url_for("update_status", work_id="__WID__") }}'.replace('__WID__', workId), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
