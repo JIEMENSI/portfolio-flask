@@ -51,13 +51,15 @@
       </div>
 
       <div class="form-group">
-        <label for="group" class="form-label">作品分组</label>
-        <select id="group" name="group" class="form-input">
-          {% for group in groups %}
-          <option value="{{ group }}" {% if group == '默认' %}selected{% endif %}>{{ group }}</option>
-          {% endfor %}
-        </select>
-        <p class="form-hint">选择作品所属分组，不选则归入"默认"分组</p>
+        <div class="form-label-row">
+          <label for="group" class="form-label" style="margin-bottom:0;">作品分组</label>
+          <select id="group" name="group" class="form-input form-input-inline">
+            {% for group in groups %}
+            <option value="{{ group }}" {% if group == '未分组' %}selected{% endif %}>{{ group }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <p class="form-hint">选择作品所属分组，不选则归入"未分组"分组</p>
       </div>
 
       <div class="form-group">
@@ -373,6 +375,19 @@
   .toggle-desc {
     font-size: 0.75rem;
     color: #888;
+  }
+
+  /* 标签 + 下拉框水平排列 */
+  .form-label-row {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+  }
+  .form-input-inline {
+    width: 180px !important;
+    padding: 0.5rem 0.75rem !important;
+    font-size: 0.875rem !important;
+    margin-bottom: 0 !important;
   }
 </style>
 

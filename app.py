@@ -73,7 +73,7 @@ DATA_FILE = os.path.join(BASE_DIR, "data", "works.json")
 AVATARS_FILE = os.path.join(BASE_DIR, "data", "avatars.json")
 GROUPS_FILE = os.path.join(BASE_DIR, "data", "groups.json")
 DEFAULT_AVATAR = "images/avatar.png"  # 相对 static 目录
-DEFAULT_GROUP = "默认"  # 默认分组名
+DEFAULT_GROUP = "未分组"  # 默认分组名
 
 # 确保目录存在
 os.makedirs(app.config["UPLOAD_FOLDER"], exist_ok=True)
@@ -528,13 +528,13 @@ def manage_groups():
             flash("分组名称不能为空", "error")
             return redirect(url_for("admin"))
         if name == DEFAULT_GROUP:
-            flash("默认分组不可删除", "error")
+            flash("未分组不可删除", "error")
             return redirect(url_for("admin"))
         groups = load_groups()
         if name in groups:
             groups.remove(name)
             save_groups(groups)
-            # 将该分组下的作品移到默认分组
+            # 将该分组下的作品移到未分组
             works = load_works()
             changed = False
             for w in works:
@@ -543,7 +543,7 @@ def manage_groups():
                     changed = True
             if changed:
                 save_works(works)
-            flash(f"分组「{name}」已删除，相关作品已移至默认分组", "success")
+            flash(f"分组「{name}」已删除，相关作品已移至未分组", "success")
         else:
             flash("分组不存在", "error")
 
@@ -729,6 +729,27 @@ def update_group(work_id):
     work["group"] = new_group
     save_works(works)
     return jsonify({"ok": True, "group": new_group, "groups": groups})
+
+@app.route("/admin/update_status/<work_id>", methods=["POST"])
+@admin_required
+def update_status(work_id):
+    """AJAX: 快速更新单个作品的公开/私有状态"""
+    works = load_works()
+    work = next((w for w in works if w["id"] == work_id), None)
+    if not work:
+        return jsonify({"ok": False, "msg": "作品不存在"}), 404
+
+    # 兼容 form 和 JSON 两种提交方式
+    if request.is_json:
+        data = request.get_json(silent=True) or {}
+        is_public = data.get("is_public")
+    else:
+        is_public = request.form.get("is_public")
+    is_public = str(is_public) == "1"
+
+    work["is_public"] = is_public
+    save_works(works)
+    return jsonify({"ok": True, "is_public": is_public})
 
 @app.route("/admin/delete/<work_id>", methods=["POST"])
 @admin_required

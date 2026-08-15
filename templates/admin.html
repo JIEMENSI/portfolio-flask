@@ -51,8 +51,8 @@
       {% for group in groups %}
       <span class="group-tag-item">
         {{ group }}
-        {% if group != '默认' %}
-        <form method="POST" action="{{ url_for('manage_groups') }}" style="display:inline;" onsubmit="return confirm('确定要删除分组「{{ group }}」吗？该分组下的作品将移至默认分组。');">
+        {% if group != '未分组' %}
+        <form method="POST" action="{{ url_for('manage_groups') }}" style="display:inline;" onsubmit="return confirm('确定要删除分组「{{ group }}」吗？该分组下的作品将移至未分组。');">
           <input type="hidden" name="action" value="delete">
           <input type="hidden" name="name" value="{{ group }}">
           <button type="submit" class="group-tag-delete" title="删除分组">×</button>
@@ -80,7 +80,7 @@
             <th class="hidden lg:table-cell">备注</th>
             <th class="hidden lg:table-cell">分组</th>
             <th>公开状态</th>
-            <th style="text-align:right;">操作</th>
+            <th style="text-align:center;">操作</th>
           </tr>
         </thead>
         <tbody>
@@ -114,9 +114,9 @@
               {% endif %}
             </td>
             <td class="hidden lg:table-cell">
-              <div class="inline-group-edit" data-work-id="{{ work.id }}" data-current="{{ work.group or '默认' }}">
+              <div class="inline-group-edit" data-work-id="{{ work.id }}" data-current="{{ work.group or '未分组' }}">
                 <div class="group-badge group-edit-trigger" title="点击修改分组">
-                  <span class="group-badge-text">{{ work.group or '默认' }}</span>
+                  <span class="group-badge-text">{{ work.group or '未分组' }}</span>
                   <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-left:4px;opacity:0.7;">
                     <polyline points="6 9 12 15 18 9"/>
                   </svg>
@@ -127,9 +127,9 @@
                   </div>
                   <div class="group-edit-options">
                     {% for g in groups %}
-                    <button type="button" class="group-edit-option {% if g == (work.group or '默认') %}active{% endif %}" data-group="{{ g }}">
+                    <button type="button" class="group-edit-option {% if g == (work.group or '未分组') %}active{% endif %}" data-group="{{ g }}">
                       <span>{{ g }}</span>
-                      {% if g == (work.group or '默认') %}
+                      {% if g == (work.group or '未分组') %}
                       <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
                         <polyline points="20 6 9 17 4 12"/>
                       </svg>
@@ -141,13 +141,22 @@
               </div>
             </td>
             <td>
-              {% if work.is_public or work.is_public is none %}
-              <span class="status-badge status-public">公开</span>
-              {% else %}
-              <span class="status-badge status-private">私有</span>
-              {% endif %}
+              <div class="inline-status-edit" data-work-id="{{ work.id }}" data-current="{% if work.is_public or work.is_public is none %}1{% else %}0{% endif %}">
+                <div class="status-badge {% if work.is_public or work.is_public is none %}status-public{% else %}status-private{% endif %} status-edit-trigger" title="点击修改状态">
+                  <span class="status-badge-text">{% if work.is_public or work.is_public is none %}公开{% else %}私有{% endif %}</span>
+                  <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-left:4px;opacity:0.7;">
+                    <polyline points="6 9 12 15 18 9"/>
+                  </svg>
+                </div>
+                <div class="status-edit-panel">
+                  <div class="status-edit-options">
+                    <button type="button" class="status-edit-option status-option-public {% if work.is_public or work.is_public is none %}active{% endif %}" data-public="1">公开</button>
+                    <button type="button" class="status-edit-option status-option-private {% if not (work.is_public or work.is_public is none) %}active{% endif %}" data-public="0">私有</button>
+                  </div>
+                </div>
+              </div>
             </td>
-            <td style="text-align:right; white-space:nowrap;">
+            <td style="text-align:center; white-space:nowrap;">
               <div class="action-buttons">
                 <a href="{{ url_for('preview', work_id=work.id) }}" target="_blank" class="action-btn action-preview">
                   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -297,6 +306,12 @@
     border-bottom: 1px solid #f0f0f0;
     gap: 0.5rem;
   }
+  .data-table thead th {
+    text-align: center;
+  }
+  .data-table tbody td {
+    text-align: center;
+  }
   .table-count {
     font-size: 0.75rem;
     padding: 0.25rem 0.75rem;
@@ -355,7 +370,8 @@
     color: #555;
   }
   .group-badge {
-    display: inline-block;
+    display: inline-flex;
+    align-items: center;
     padding: 0.25rem 0.625rem;
     background: linear-gradient(135deg, rgba(124, 58, 237, 0.1), rgba(236, 72, 153, 0.1));
     border-radius: 0.375rem;
@@ -363,12 +379,19 @@
     color: #7c3aed;
     font-weight: 500;
   }
+  .group-badge svg {
+    flex-shrink: 0;
+  }
   .status-badge {
-    display: inline-block;
+    display: inline-flex;
+    align-items: center;
     padding: 0.25rem 0.625rem;
     border-radius: 0.375rem;
     font-size: 0.75rem;
     font-weight: 500;
+  }
+  .status-badge svg {
+    flex-shrink: 0;
   }
   .status-public {
     background: rgba(34, 197, 94, 0.1);
@@ -377,6 +400,84 @@
   .status-private {
     background: rgba(239, 68, 68, 0.1);
     color: #ef4444;
+  }
+
+  /* ===== 状态内联编辑 ===== */
+  .inline-status-edit {
+    position: relative;
+    display: inline-block;
+  }
+  .status-edit-trigger {
+    cursor: pointer;
+    padding-right: 0.5rem !important;
+    transition: all 0.2s ease;
+    user-select: none;
+  }
+  .status-edit-trigger:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+  }
+  .status-edit-panel {
+    position: absolute;
+    top: calc(100% + 6px);
+    left: 50%;
+    transform: translateX(-50%);
+    min-width: 100px;
+    background: #fff;
+    border: 1px solid rgba(124, 58, 237, 0.15);
+    border-radius: 0.75rem;
+    box-shadow: 0 12px 32px rgba(124, 58, 237, 0.15);
+    padding: 0.5rem;
+    z-index: 100;
+    display: none;
+    animation: panelIn 0.2s ease;
+  }
+  .inline-status-edit.open .status-edit-panel {
+    display: block;
+  }
+  .status-edit-options {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+  .status-edit-option {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    padding: 0.375rem 0.625rem;
+    border: none;
+    background: transparent;
+    border-radius: 0.375rem;
+    font-size: 0.8125rem;
+    color: #444;
+    cursor: pointer;
+    text-align: center;
+    font-weight: 500;
+    transition: background 0.15s ease, color 0.15s ease;
+  }
+  .status-option-public:hover {
+    background: rgba(34, 197, 94, 0.12);
+    color: #22c55e;
+  }
+  .status-option-private:hover {
+    background: rgba(239, 68, 68, 0.12);
+    color: #ef4444;
+  }
+  .status-option-public.active {
+    background: rgba(34, 197, 94, 0.18);
+    color: #22c55e;
+    font-weight: 600;
+  }
+  .status-option-private.active {
+    background: rgba(239, 68, 68, 0.18);
+    color: #ef4444;
+    font-weight: 600;
+  }
+  .inline-status-edit.saving .status-edit-trigger {
+    opacity: 0.5;
+    pointer-events: none;
+    animation: pulse 1s ease-in-out infinite;
   }
 
   /* 分组管理卡片样式 */
@@ -463,7 +564,7 @@
   .action-buttons {
     display: flex;
     gap: 0.375rem;
-    justify-content: flex-end;
+    justify-content: center;
   }
   .action-btn {
     display: inline-flex;
@@ -652,6 +753,9 @@
       document.querySelectorAll('.inline-group-edit.open').forEach(function(o) {
         if (o !== editor) o.classList.remove('open');
       });
+      document.querySelectorAll('.inline-status-edit.open').forEach(function(o) {
+        o.classList.remove('open');
+      });
       editor.classList.toggle('open');
       if (editor.classList.contains('open')) {
         setTimeout(function() { input.focus(); input.select(); }, 50);
@@ -724,6 +828,79 @@
           // 给个成功反馈（短暂变绿）
           var originBg = trigger.style.background;
           trigger.style.background = 'linear-gradient(135deg, rgba(34,197,94,0.2), rgba(16,185,129,0.2))';
+          setTimeout(function() { trigger.style.background = originBg; }, 600);
+        } else {
+          alert('保存失败：' + (data.msg || '未知错误'));
+        }
+      })
+      .catch(function(err) { alert('网络错误：' + err); })
+      .finally(function() {
+        editor.classList.remove('saving');
+      });
+    }
+  });
+})();
+
+// 状态内联编辑
+(function(){
+  // 全局点击关闭状态面板
+  document.addEventListener('click', function(e) {
+    document.querySelectorAll('.inline-status-edit.open').forEach(function(el) {
+      if (!el.contains(e.target)) el.classList.remove('open');
+    });
+  });
+
+  document.querySelectorAll('.inline-status-edit').forEach(function(editor) {
+    var trigger = editor.querySelector('.status-edit-trigger');
+    var badgeText = editor.querySelector('.status-badge-text');
+    var options = editor.querySelectorAll('.status-edit-option');
+    var workId = editor.getAttribute('data-work-id');
+
+    trigger.addEventListener('click', function(e) {
+      e.stopPropagation();
+      document.querySelectorAll('.inline-status-edit.open').forEach(function(o) {
+        if (o !== editor) o.classList.remove('open');
+      });
+      document.querySelectorAll('.inline-group-edit.open').forEach(function(o) {
+        o.classList.remove('open');
+      });
+      editor.classList.toggle('open');
+    });
+
+    options.forEach(function(opt) {
+      opt.addEventListener('click', function(e) {
+        e.stopPropagation();
+        submitStatus(opt.getAttribute('data-public'));
+      });
+    });
+
+    function submitStatus(publicVal) {
+      var current = editor.getAttribute('data-current');
+      if (publicVal === current) {
+        editor.classList.remove('open');
+        return;
+      }
+      editor.classList.add('saving');
+      editor.classList.remove('open');
+      fetch('{{ url_for("update_status", work_id="__WID__") }}'.replace('__WID__', workId), {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'same-origin',
+        body: JSON.stringify({ is_public: publicVal })
+      })
+      .then(function(r) { return r.json(); })
+      .then(function(data) {
+        if (data.ok) {
+          badgeText.textContent = data.is_public ? '公开' : '私有';
+          editor.setAttribute('data-current', data.is_public ? '1' : '0');
+          trigger.classList.toggle('status-public', data.is_public);
+          trigger.classList.toggle('status-private', !data.is_public);
+          options.forEach(function(opt) {
+            opt.classList.toggle('active', opt.getAttribute('data-public') === (data.is_public ? '1' : '0'));
+          });
+          // 成功反馈
+          var originBg = trigger.style.background;
+          trigger.style.background = data.is_public ? 'rgba(34,197,94,0.25)' : 'rgba(239,68,68,0.25)';
           setTimeout(function() { trigger.style.background = originBg; }, 600);
         } else {
           alert('保存失败：' + (data.msg || '未知错误'));
