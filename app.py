@@ -607,7 +607,7 @@ def upload():
 
         # 保存元数据
         works = load_works()
-        works.append({
+        new_work = {
             "id": work_id,
             "title": title,
             "description": description,
@@ -618,7 +618,16 @@ def upload():
             "original_name": filename,
             "is_public": is_public,
             "created_at": datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-        })
+        }
+        # 先尝试替换已有条目（一致性检查可能已为新HTML创建了空记录）
+        replaced = False
+        for i, w in enumerate(works):
+            if w.get("id") == work_id:
+                works[i] = new_work
+                replaced = True
+                break
+        if not replaced:
+            works.append(new_work)
         save_works(works)
 
         flash(f"作品「{title}」上传成功！", "success")
