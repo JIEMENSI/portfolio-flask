@@ -139,6 +139,54 @@ def verify_admin(username, password):
 DATA_FILE = os.path.join(BASE_DIR, "data", "works.json")
 AVATARS_FILE = os.path.join(BASE_DIR, "data", "avatars.json")
 GROUPS_FILE = os.path.join(BASE_DIR, "data", "groups.json")
+VISITORS_FILE = os.path.join(BASE_DIR, "data", "visitors.json")
+
+
+def load_visitor_stats():
+    """读取访客统计：{total: 总访客数, daily: {日期: 当日访客数}}"""
+    try:
+        with open(VISITORS_FILE, "r", encoding="utf-8") as f:
+            stats = json.load(f)
+        if not isinstance(stats, dict):
+            raise ValueError("visitors.json 格式错误")
+        stats.setdefault("total", 0)
+        stats.setdefault("daily", {})
+        return stats
+    except Exception as e:
+        print(f"[VISITOR] 读取统计失败: {e!r}，使用空统计")
+        return {"total": 0, "daily": {}}
+
+
+def save_visitor_stats(stats):
+    """原子写入访客统计（先写临时文件再替换，避免写一半损坏）"""
+    tmp_file = VISITORS_FILE + ".tmp"
+    with open(tmp_file, "w", encoding="utf-8") as f:
+        json.dump(stats, f, ensure_ascii=False, indent=2)
+    os.replace(tmp_file, VISITORS_FILE)
+
+
+@app.before_request
+def track_visitor():
+    """真实访客计数：同一浏览器会话只计 1 次，管理员不计"""
+    # 静态资源不计数
+    if request.path.startswith("/static/"):
+        return
+    # 管理员访问不计
+    if session.get("role") == "admin":
+        return
+    # 同浏览器会话只计一次（刷新/翻页不重复）
+    if session.get("visitor_counted"):
+        return
+    try:
+        stats = load_visitor_stats()
+        today = datetime.now().strftime("%Y-%m-%d")
+        stats["total"] = int(stats.get("total", 0)) + 1
+        daily = stats.get("daily", {})
+        daily[today] = int(daily.get(today, 0)) + 1
+        save_visitor_stats(stats)
+    except Exception as e:
+        print(f"[VISITOR] 计数失败: {e!r}")
+    session["visitor_counted"] = True
 DEFAULT_AVATAR = "images/avatar.png"  # 相对 static 目录
 DEFAULT_GROUP = "未分组"  # 默认分组名
 
@@ -414,6 +462,7 @@ def mask_username(username):
 def inject_user():
     """全局注入用户信息给模板"""
     uptime_seconds = int(time.time() - SITE_LAUNCH_TIME)
+    visitor_count = int(load_visitor_stats().get("total", 0))
     role = session.get("role")
     if role == "admin":
         username = session.get("username", "")
@@ -424,6 +473,7 @@ def inject_user():
             "avatar_url": avatar_url,
             "avatar_version": avatar_version,
             "uptime_seconds": uptime_seconds,
+            "visitor_count": visitor_count,
         }
     if role == "guest":
         return {
@@ -432,8 +482,9 @@ def inject_user():
             "avatar_url": DEFAULT_AVATAR,
             "avatar_version": "1",
             "uptime_seconds": uptime_seconds,
+            "visitor_count": visitor_count,
         }
-    return {"user_role": None, "display_name": None, "avatar_url": None, "avatar_version": "1", "uptime_seconds": uptime_seconds}
+    return {"user_role": None, "display_name": None, "avatar_url": None, "avatar_version": "1", "uptime_seconds": uptime_seconds, "visitor_count": visitor_count}
 
 @app.route("/")
 def index():
