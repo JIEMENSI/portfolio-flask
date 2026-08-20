@@ -294,6 +294,23 @@ body {
 .nav-text-btn:hover { color: #7c3aed !important; }
 .nav-text-btn:hover::after { width: 100%; }
 
+/* 导航栏当前页标识（不可点击） */
+.nav-text-btn-active {
+  color: #7c3aed !important;
+  font-weight: 600 !important;
+  cursor: default;
+  position: relative;
+}
+.nav-text-btn-active::after {
+  content: '';
+  position: absolute;
+  bottom: -4px;
+  left: 0;
+  width: 100%;
+  height: 2px;
+  background: linear-gradient(90deg, #7c3aed, #ec4899);
+}
+
 /* ========== 页面容器（不对称） ========== */
 .page-container {
   max-width: 1280px;
@@ -301,6 +318,10 @@ body {
   padding: 3rem 2rem 2rem;
   position: relative;
   z-index: 1;
+}
+.page-container-wide {
+  max-width: 1600px;
+  padding: 3rem 2.5rem 2rem;
 }
 .page-container-sm {
   max-width: 520px;
@@ -696,6 +717,19 @@ body {
   border-radius: 0.75rem;
   object-fit: cover;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  display: inline-block;
+  vertical-align: middle;
+}
+.data-table .thumb-empty {
+  width: 3.5rem;
+  height: 3.5rem;
+  border-radius: 0.75rem;
+  background: linear-gradient(135deg, #f3f4f6, #e5e7eb);
+  color: #9ca3af;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.04);
 }
 
 /* ========== 分割线（渐变） ========== */

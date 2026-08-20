@@ -76,13 +76,13 @@
               <input type="file" name="avatar_file" id="avatarFile" accept=".png,.jpg,.jpeg,.gif,.webp">
             </form>
             <img id="navAvatar" src="{{ url_for('static', filename=avatar_url) }}?v={{ avatar_version }}" alt="头像"
-                 class="nav-user-avatar w-8 h-8 rounded-full object-cover shadow-sm cursor-pointer"
+                 class="nav-user-avatar w-10 h-10 rounded-full object-cover shadow-sm cursor-pointer"
                  title="点击更换头像" onclick="document.getElementById('avatarFile').click();">
             <span class="nav-user-name text-sm">{{ display_name }}</span>
           </div>
           {% elif user_role == 'guest' %}
           <div class="flex items-center gap-2 pl-6 border-l border-gray-200">
-            <img src="{{ url_for('static', filename=avatar_url) }}" alt="头像" class="nav-user-avatar w-8 h-8 rounded-full object-cover shadow-sm">
+            <img src="{{ url_for('static', filename=avatar_url) }}" alt="头像" class="nav-user-avatar w-10 h-10 rounded-full object-cover shadow-sm">
             <span class="nav-user-name text-sm">{{ display_name }}</span>
           </div>
           {% endif %}
@@ -103,7 +103,11 @@
         
         <div class="flex items-center gap-4">
           {% if session.get('role') == 'admin' %}
-            <a href="{{ url_for('admin') }}" class="nav-text-btn">管理后台</a>
+            {% if request.endpoint == 'admin' %}
+              <span class="nav-text-btn nav-text-btn-active">管理后台</span>
+            {% else %}
+              <a href="{{ url_for('admin') }}" class="nav-text-btn">管理后台</a>
+            {% endif %}
             <a href="{{ url_for('logout') }}" class="nav-text-btn">退出</a>
           {% elif session.get('role') == 'guest' %}
             <a href="{{ url_for('login') }}" class="nav-btn-login">管理员登录</a>

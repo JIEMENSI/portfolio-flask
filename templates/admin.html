@@ -2,7 +2,7 @@
 {% block title %}管理后台 - 个人作品集{% endblock %}
 
 {% block content %}
-<div class="page-container page-fade-in">
+<div class="page-container page-container-wide page-fade-in">
   <!-- 不对称标题区域 -->
   <div class="admin-header animate-slide-left">
     <div class="admin-header-left">
@@ -72,31 +72,31 @@
     <div class="table-wrapper">
       <table class="data-table">
         <colgroup>
-          <col style="width:64px">
-          <col style="width:220px">
+          <col style="width:76px">
+          <col style="width:minmax(200px, 1.6fr)">
+          <col style="width:minmax(180px, 1.4fr)">
           <col style="width:150px">
-          <col style="width:130px">
-          <col style="width:150px">
-          <col style="width:110px">
-          <col style="width:80px">
-          <col style="width:190px">
+          <col style="width:minmax(160px, 1.2fr)">
+          <col style="width:140px">
+          <col style="width:100px">
+          <col style="width:210px">
         </colgroup>
         <thead>
           <tr>
-            <th>封面</th>
-            <th>作品名称</th>
-            <th class="hidden sm:table-cell">简介</th>
-            <th class="hidden md:table-cell">上传时间</th>
-            <th class="hidden lg:table-cell">备注</th>
-            <th class="hidden lg:table-cell">分组</th>
-            <th>公开状态</th>
-            <th style="text-align:center;">操作</th>
+            <th class="th-center">封面</th>
+            <th class="th-left">作品名称</th>
+            <th class="hidden sm:table-cell th-left">简介</th>
+            <th class="hidden md:table-cell th-center">上传时间</th>
+            <th class="hidden lg:table-cell th-left">备注</th>
+            <th class="hidden lg:table-cell th-left">分组</th>
+            <th class="th-center">公开状态</th>
+            <th class="th-center">操作</th>
           </tr>
         </thead>
         <tbody>
           {% for work in works %}
           <tr class="table-row" data-delay="{{ loop.index0 * 50 }}">
-            <td>
+            <td class="td-cover-cell">
               {% if work.cover %}
               <img src="{{ url_for('static', filename='covers/' + work.cover) }}" alt="封面" class="thumb">
               {% else %}
@@ -107,23 +107,23 @@
               </div>
               {% endif %}
             </td>
-            <td class="td-title-cell td-cell-ellipsis" title="{{ work.title }}">
+            <td class="td-left td-cell-ellipsis" title="{{ work.title }}">
               <a href="{{ url_for('work_detail', work_id=work.id) }}" class="work-name-link">
                 {{ work.title }}
               </a>
             </td>
-            <td class="hidden sm:table-cell td-cell-ellipsis" title="{{ work.description or '—' }}">{{ work.description or '—' }}</td>
-            <td class="hidden md:table-cell">
+            <td class="hidden sm:table-cell td-left td-cell-ellipsis" title="{{ work.description or '—' }}">{{ work.description or '—' }}</td>
+            <td class="hidden md:table-cell td-center">
               <span class="time-badge">{{ work.created_at }}</span>
             </td>
-            <td class="hidden lg:table-cell td-cell-ellipsis" title="{{ work.remark or '' }}">
+            <td class="hidden lg:table-cell td-left td-cell-ellipsis" title="{{ work.remark or '' }}">
               {% if work.remark %}
               <span class="remark-tag">{{ work.remark }}</span>
               {% else %}
               <span class="text-muted">—</span>
               {% endif %}
             </td>
-            <td class="hidden lg:table-cell">
+            <td class="hidden lg:table-cell td-left">
               <div class="inline-group-edit" data-work-id="{{ work.id }}" data-current="{{ work.group or '未分组' }}">
                 <div class="group-badge group-edit-trigger" title="点击修改分组">
                   <span class="group-badge-text">{{ work.group or '未分组' }}</span>
@@ -166,7 +166,7 @@
                 </div>
               </div>
             </td>
-            <td style="text-align:center; white-space:nowrap;">
+            <td class="td-center td-action-cell">
               <div class="action-buttons">
                 <a href="{{ url_for('preview', work_id=work.id) }}" target="_blank" class="action-btn action-preview">
                   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -316,17 +316,42 @@
     border-bottom: 1px solid #f0f0f0;
     gap: 0.5rem;
   }
+  .data-table {
+    table-layout: fixed;
+    width: 100%;
+  }
   .data-table thead th {
+    text-align: center;
+    font-weight: 600;
+    color: #555;
+    padding: 0.875rem 0.625rem;
+  }
+  .data-table thead th.th-left {
+    text-align: left;
+    padding-left: 0.75rem;
+  }
+  .data-table thead th.th-center {
     text-align: center;
   }
   .data-table tbody td {
     text-align: center;
+    padding: 0.875rem 0.625rem;
+    vertical-align: middle;
   }
-  .data-table {
-    table-layout: fixed;
-  }
-  td.td-title-cell {
+  .data-table tbody td.td-left {
     text-align: left;
+    padding-left: 0.75rem;
+  }
+  .data-table tbody td.td-center {
+    text-align: center;
+  }
+  .data-table tbody td.td-cover-cell {
+    text-align: center;
+    padding: 0.625rem;
+  }
+  .data-table tbody td.td-action-cell {
+    padding-right: 1.5rem;
+    white-space: nowrap;
   }
   td.td-cell-ellipsis {
     overflow: hidden;
