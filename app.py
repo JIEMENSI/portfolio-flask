@@ -7,6 +7,7 @@ import gzip
 from datetime import datetime
 from functools import wraps
 from werkzeug.utils import secure_filename
+from werkzeug.security import check_password_hash
 
 # 网站上线时间：2026年8月6日13时24分36秒
 SITE_LAUNCH_TIME = datetime(2026, 8, 6, 13, 24, 36).timestamp()
@@ -63,11 +64,77 @@ def _after_request(resp):
     resp.headers.setdefault("Referrer-Policy", "strict-origin-when-cross-origin")
     return resp
 
-# 管理员账号（支持多个）
-ADMIN_ACCOUNTS = [
-    {"username": "17671883601", "password": "zxcvbnm123"},
-    {"username": "13797885246", "password": "wahsmmyj"},
-]
+# ============================================================
+# 管理员账号加载（密码不再硬编码在代码中）
+# 优先级：
+#   1. config.local.json（推荐，已 gitignore，本地/服务器都可用）
+#   2. 环境变量 ADMIN_CREDENTIALS（格式：用户:密码哈希;用户:密码哈希）
+#   3. 文件缺失时使用安全默认值（临时密码 12345678，首次登录后请立即修改）
+# 密码存储说明：支持两种格式
+#   * scrypt:xxxx / pbkdf2:xxxx —— werkzeug 生成的哈希（推荐）
+#   * 其他任意字符串           —— 按明文比对（用于临时过渡）
+# 生成哈希命令：
+#   python -c "from werkzeug.security import generate_password_hash; print(generate_password_hash('你的密码'))"
+# ============================================================
+CONFIG_FILE = os.path.join(BASE_DIR, "config.local.json")
+
+def _parse_credentials(raw):
+    """把 '用户:密码;用户:密码' 解析成账号列表"""
+    accounts = []
+    for item in (raw or "").split(";"):
+        if ":" in item:
+            u, p = item.split(":", 1)
+            u = u.strip()
+            p = p.strip()
+            if u and p:
+                accounts.append({"username": u, "password": p})
+    return accounts
+
+def load_admin_accounts():
+    """加载管理员账号列表"""
+    # 1) 配置文件优先
+    try:
+        if os.path.exists(CONFIG_FILE):
+            with open(CONFIG_FILE, "r", encoding="utf-8") as f:
+                cfg = json.load(f)
+            accounts = cfg.get("admin_accounts") or []
+            if accounts:
+                return [{"username": str(a["username"]).strip(),
+                         "password": str(a.get("password", "")).strip()}
+                        for a in accounts if a.get("username") and a.get("password")]
+            print(f"[CONFIG] {CONFIG_FILE} 存在但无有效账号，回退到环境变量")
+        # 2) 环境变量
+        env = os.environ.get("ADMIN_CREDENTIALS", "").strip()
+        accounts = _parse_credentials(env)
+        if accounts:
+            return accounts
+    except Exception as e:
+        print(f"[CONFIG] 加载账号配置失败: {e!r}，使用默认账号")
+    # 3) 安全默认值（避免锁定，但请尽快修改）
+    default = os.environ.get("DEFAULT_ADMIN_PASSWORD", "12345678")
+    return [{"username": "admin", "password": default}]
+
+ADMIN_ACCOUNTS = load_admin_accounts()
+
+def verify_admin(username, password):
+    """校验管理员账号：密码支持哈希或明文两种格式"""
+    username = (username or "").strip()
+    if not username or not password:
+        return False
+    for acc in ADMIN_ACCOUNTS:
+        if acc["username"] != username:
+            continue
+        stored = acc["password"]
+        if stored.startswith(("scrypt:", "pbkdf2:")):
+            try:
+                if check_password_hash(stored, password):
+                    return True
+            except Exception:
+                continue
+        else:
+            if stored == password:
+                return True
+    return False
 
 DATA_FILE = os.path.join(BASE_DIR, "data", "works.json")
 AVATARS_FILE = os.path.join(BASE_DIR, "data", "avatars.json")
@@ -442,8 +509,7 @@ def login():
     if request.method == "POST":
         username = request.form.get("username", "").strip()
         password = request.form.get("password", "")
-        matched = next((a for a in ADMIN_ACCOUNTS if a["username"] == username and a["password"] == password), None)
-        if matched:
+        if verify_admin(username, password):
             session["role"] = "admin"
             session["username"] = username
             flash("管理员登录成功", "success")

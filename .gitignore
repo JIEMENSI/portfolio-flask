@@ -16,6 +16,13 @@ ENV/
 .env
 .env.local
 
+# 本地敏感配置（管理员账号等，禁止入库）
+config.local.json
+
+# 备份文件
+*.bak
+*.orig
+
 # 日志
 *.log
 
