@@ -71,6 +71,16 @@
     </div>
     <div class="table-wrapper">
       <table class="data-table">
+        <colgroup>
+          <col style="width:64px">
+          <col style="width:220px">
+          <col style="width:150px">
+          <col style="width:130px">
+          <col style="width:150px">
+          <col style="width:110px">
+          <col style="width:80px">
+          <col style="width:190px">
+        </colgroup>
         <thead>
           <tr>
             <th>封面</th>
@@ -97,16 +107,16 @@
               </div>
               {% endif %}
             </td>
-            <td>
+            <td class="td-title-cell td-cell-ellipsis" title="{{ work.title }}">
               <a href="{{ url_for('work_detail', work_id=work.id) }}" class="work-name-link">
                 {{ work.title }}
               </a>
             </td>
-            <td class="hidden sm:table-cell cell-truncate">{{ work.description or '—' }}</td>
+            <td class="hidden sm:table-cell td-cell-ellipsis" title="{{ work.description or '—' }}">{{ work.description or '—' }}</td>
             <td class="hidden md:table-cell">
               <span class="time-badge">{{ work.created_at }}</span>
             </td>
-            <td class="hidden lg:table-cell cell-truncate">
+            <td class="hidden lg:table-cell td-cell-ellipsis" title="{{ work.remark or '' }}">
               {% if work.remark %}
               <span class="remark-tag">{{ work.remark }}</span>
               {% else %}
@@ -311,6 +321,23 @@
   }
   .data-table tbody td {
     text-align: center;
+  }
+  .data-table {
+    table-layout: fixed;
+  }
+  td.td-title-cell {
+    text-align: left;
+  }
+  td.td-cell-ellipsis {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .data-table .time-badge,
+  .data-table .status-badge,
+  .data-table .group-badge,
+  .data-table .action-buttons {
+    white-space: nowrap;
   }
   .table-count {
     font-size: 0.75rem;
