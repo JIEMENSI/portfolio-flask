@@ -47,3 +47,6 @@ static/uploads/
 static/covers/
 static/avatars/
 rebuild_data.py
+
+# Isolated development worktrees
+.worktrees/
