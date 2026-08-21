@@ -1,0 +1,12 @@
+name = "html-preview-public"
+main = "src/preview/index.ts"
+compatibility_date = "2026-08-21"
+
+[[d1_databases]]
+binding = "DB"
+database_name = "html-preview"
+database_id = "local-placeholder"
+
+[[r2_buckets]]
+binding = "FILES"
+bucket_name = "html-preview-files"

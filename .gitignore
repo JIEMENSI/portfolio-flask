@@ -50,3 +50,11 @@ rebuild_data.py
 
 # Isolated development worktrees
 .worktrees/
+
+# Node and Cloudflare local state
+node_modules/
+.pnpm-store/
+.xdg/
+.wrangler/
+dist/
+migration-report.json
