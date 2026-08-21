@@ -125,6 +125,18 @@ export class ProjectRepository {
     return mapVersion(row);
   }
 
+  async getVersionByNumber(projectId: string, versionNumber: number): Promise<Version | null> {
+    const row = await this.db.prepare("SELECT * FROM versions WHERE project_id = ? AND version_number = ? AND deleted_at IS NULL")
+      .bind(projectId, versionNumber).first<VersionRow>();
+    return row ? mapVersion(row) : null;
+  }
+
+  async listVersions(projectId: string): Promise<Version[]> {
+    const result = await this.db.prepare("SELECT * FROM versions WHERE project_id = ? AND deleted_at IS NULL ORDER BY version_number DESC")
+      .bind(projectId).all<VersionRow>();
+    return result.results.map(mapVersion);
+  }
+
   async archiveProject(id: string): Promise<void> {
     await this.setStatus(id, "archived");
   }
