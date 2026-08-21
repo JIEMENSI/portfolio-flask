@@ -85,6 +85,26 @@ export class ProjectRepository {
     return result.results.map(mapProject);
   }
 
+  async listProjects(): Promise<Project[]> {
+    const result = await this.db.prepare("SELECT * FROM projects ORDER BY updated_at DESC").all<ProjectRow>();
+    return result.results.map(mapProject);
+  }
+
+  async setVisibility(id: string, isPublic: boolean): Promise<Project | null> {
+    const now = new Date().toISOString();
+    await this.db.prepare("UPDATE projects SET is_public = ?, updated_at = ? WHERE id = ?")
+      .bind(isPublic ? 1 : 0, now, id).run();
+    return this.getProject(id);
+  }
+
+  async setStatus(id: string, status: Project["status"]): Promise<Project | null> {
+    const now = new Date().toISOString();
+    const trashedAt = status === "trashed" ? now : null;
+    await this.db.prepare("UPDATE projects SET status = ?, trashed_at = ?, updated_at = ? WHERE id = ?")
+      .bind(status, trashedAt, now, id).run();
+    return this.getProject(id);
+  }
+
   async createNextVersion(projectId: string, input: CreateVersionInput): Promise<Version> {
     const project = await this.getProject(projectId);
     if (!project) throw new Error("PROJECT_NOT_FOUND");
@@ -106,7 +126,6 @@ export class ProjectRepository {
   }
 
   async archiveProject(id: string): Promise<void> {
-    const now = new Date().toISOString();
-    await this.db.prepare("UPDATE projects SET status = 'archived', updated_at = ? WHERE id = ?").bind(now, id).run();
+    await this.setStatus(id, "archived");
   }
 }
