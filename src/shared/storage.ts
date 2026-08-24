@@ -36,28 +36,28 @@ export async function validateHtml(file: File): Promise<ValidatedHtml> {
 }
 
 export async function putVersionObject(
-  bucket: R2Bucket,
+  store: KVNamespace,
   projectId: string,
   versionId: string,
   html: ValidatedHtml
 ): Promise<{ objectKey: string; sha256: string; fileSize: number }> {
   const objectKey = `projects/${projectId}/versions/${versionId}/${randomHex(16)}${html.extension}`;
-  await bucket.put(objectKey, html.bytes, {
-    httpMetadata: { contentType: "text/html; charset=utf-8" },
-    customMetadata: { originalFilename: html.originalFilename, sha256: html.sha256 }
+  await store.put(objectKey, html.bytes, {
+    metadata: { contentType: "text/html; charset=utf-8", originalFilename: html.originalFilename, sha256: html.sha256 }
   });
   return { objectKey, sha256: html.sha256, fileSize: html.fileSize };
 }
 
-export async function copyVersionObject(bucket: R2Bucket, sourceKey: string, targetKey: string): Promise<void> {
-  const source = await bucket.get(sourceKey);
-  if (!source) throw new Error("SOURCE_OBJECT_NOT_FOUND");
-  await bucket.put(targetKey, source.body, {
-    httpMetadata: source.httpMetadata,
-    customMetadata: source.customMetadata
-  });
+export async function getStoredBytes(store: KVNamespace, key: string): Promise<ArrayBuffer | null> {
+  return store.get(key, "arrayBuffer");
 }
 
-export async function deleteObjects(bucket: R2Bucket, keys: string[]): Promise<void> {
-  if (keys.length > 0) await bucket.delete(keys);
+export async function copyVersionObject(store: KVNamespace, sourceKey: string, targetKey: string): Promise<void> {
+  const source = await store.getWithMetadata<Record<string, string>>(sourceKey, "arrayBuffer");
+  if (!source.value) throw new Error("SOURCE_OBJECT_NOT_FOUND");
+  await store.put(targetKey, source.value, { metadata: source.metadata ?? undefined });
+}
+
+export async function deleteObjects(store: KVNamespace, keys: string[]): Promise<void> {
+  await Promise.all(keys.map((key) => store.delete(key)));
 }

@@ -7,6 +7,6 @@ binding = "DB"
 database_name = "html-preview"
 database_id = "D1_DATABASE_ID"
 
-[[r2_buckets]]
+[[kv_namespaces]]
 binding = "FILES"
-bucket_name = "html-preview-files"
+id = "KV_NAMESPACE_ID"

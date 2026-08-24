@@ -1,6 +1,6 @@
 export interface Env {
   DB: D1Database;
-  FILES: R2Bucket;
+  FILES: KVNamespace;
   PREVIEW_BASE_URL?: string;
   ADMIN_PASSWORD_HASH?: string;
   SESSION_PEPPER?: string;

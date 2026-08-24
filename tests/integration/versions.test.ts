@@ -43,7 +43,7 @@ describe("version workflows", () => {
 
     expect([v1.versionNumber, v2.versionNumber]).toEqual([1, 2]);
     expect(v1.objectKey).not.toBe(v2.objectKey);
-    expect(await (await testEnv.FILES.get(v1.objectKey))?.text()).toContain("V1");
+    expect(await testEnv.FILES.get(v1.objectKey, "text")).toContain("V1");
 
     const detail = await adminApp.request(`/api/projects/${project.id}`, { headers }, testEnv);
     expect(detail.status).toBe(200);
@@ -78,7 +78,7 @@ describe("version workflows", () => {
     const row = await testEnv.DB.prepare("SELECT COUNT(*) AS count FROM versions WHERE project_id = ?")
       .bind(project.id).first<{ count: number }>();
     expect(row?.count).toBe(1);
-    expect((await testEnv.FILES.list({ prefix: `projects/${project.id}/versions/` })).objects).toHaveLength(1);
+    expect((await testEnv.FILES.list({ prefix: `projects/${project.id}/versions/` })).keys).toHaveLength(1);
   });
 
   it("requires confirmation and only deletes a historical version", async () => {

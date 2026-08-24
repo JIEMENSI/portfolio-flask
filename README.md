@@ -2,7 +2,7 @@
 
 面向产品与开发对接的单 HTML 预览平台。上传 `.html` 或 `.htm` 后，可生成项目永久链接和每个版本的固定链接。公开项目允许拿到链接的访客查看；私有项目的所有游客链接统一返回“无权限查看”。
 
-新版本使用 Cloudflare Workers、D1 和 R2。旧 PythonAnywhere 网站在迁移验收完成前保留不动，作为回滚来源。
+新版本使用 Cloudflare Workers、D1 和 Workers KV。旧 PythonAnywhere 网站在迁移验收完成前保留不动，作为回滚来源。
 
 ## 安全边界
 
@@ -33,17 +33,18 @@ pnpm exec wrangler d1 migrations apply html-preview --local --config wrangler.ad
 
 ## Cloudflare 资源与部署
 
-创建同一套 D1/R2，两个 Worker 共享它们：
+创建同一套 D1/KV，两个 Worker 共享它们。KV 免费套餐不要求启用 R2 订阅或填写银行卡；单值上限 25 MiB，本项目仍限制单个 HTML 为 16 MiB：
 
 ```bash
 pnpm exec wrangler d1 create html-preview
-pnpm exec wrangler r2 bucket create html-preview-files
+pnpm exec wrangler kv namespace create html-preview-files
 ```
 
 通过环境变量生成被 Git 忽略的生产配置：
 
 ```powershell
 $env:CLOUDFLARE_D1_DATABASE_ID="Cloudflare 返回的 D1 UUID"
+$env:CLOUDFLARE_KV_NAMESPACE_ID="Cloudflare 返回的 KV namespace ID"
 $env:PREVIEW_WORKER_URL="https://你的预览域名"
 pnpm run config:deploy
 pnpm exec wrangler d1 migrations apply html-preview --remote --config .deploy/wrangler.admin.toml
@@ -61,7 +62,7 @@ pnpm exec wrangler secret put MIGRATION_TOKEN --config .deploy/wrangler.admin.to
 
 迁移完成后删除 `MIGRATION_TOKEN`。GitHub `production` 环境需要：
 
-- Secrets：`CLOUDFLARE_API_TOKEN`、`CLOUDFLARE_ACCOUNT_ID`、`CLOUDFLARE_D1_DATABASE_ID`
+- Secrets：`CLOUDFLARE_API_TOKEN`、`CLOUDFLARE_ACCOUNT_ID`、`CLOUDFLARE_D1_DATABASE_ID`、`CLOUDFLARE_KV_NAMESPACE_ID`
 - Variable：`PREVIEW_WORKER_URL`
 
 流水线先执行类型检查、全部测试和 dry-run build，再依次部署 Admin 与 Preview；不会自动迁移旧数据。

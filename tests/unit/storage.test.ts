@@ -1,6 +1,6 @@
 import { env } from "cloudflare:workers";
 import { describe, expect, it } from "vitest";
-import { putVersionObject, validateHtml } from "../../src/shared/storage";
+import { getStoredBytes, putVersionObject, validateHtml } from "../../src/shared/storage";
 import type { Env } from "../../src/shared/types";
 
 const testEnv = env as unknown as Env;
@@ -23,10 +23,10 @@ describe("HTML storage", () => {
     const validated = await validateHtml(file);
 
     const stored = await putVersionObject(testEnv.FILES, "project-1", "version-1", validated);
-    const object = await testEnv.FILES.get(stored.objectKey);
+    const bytes = await getStoredBytes(testEnv.FILES, stored.objectKey);
 
     expect(stored.objectKey).toMatch(/^projects\/project-1\/versions\/version-1\/[a-f0-9]{32}\.html$/);
     expect(stored.sha256).toHaveLength(64);
-    expect(await object?.text()).toBe("<!doctype html><title>x</title>");
+    expect(new TextDecoder().decode(bytes!)).toBe("<!doctype html><title>x</title>");
   });
 });

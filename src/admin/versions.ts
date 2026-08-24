@@ -1,7 +1,7 @@
 import type { Context, Hono } from "hono";
 import { ProjectRepository } from "../shared/repository";
 import { randomShareId } from "../shared/ids";
-import { deleteObjects, putVersionObject, validateHtml } from "../shared/storage";
+import { deleteObjects, getStoredBytes, putVersionObject, validateHtml } from "../shared/storage";
 import type { Env } from "../shared/types";
 import { requireAdmin, requireCsrf } from "./auth";
 
@@ -109,9 +109,9 @@ export function registerVersionRoutes(app: AdminApp): void {
     const projectId = context.req.param("id");
     const source = await repo.getVersionByNumber(projectId, Number(context.req.param("number")));
     if (!source) return context.json({ error: "版本不存在" }, 404);
-    const object = await context.env.FILES.get(source.objectKey);
-    if (!object) return context.json({ error: "源文件不存在" }, 409);
-    const file = new File([await object.arrayBuffer()], source.originalFilename, { type: "text/html" });
+    const bytes = await getStoredBytes(context.env.FILES, source.objectKey);
+    if (!bytes) return context.json({ error: "源文件不存在" }, 409);
+    const file = new File([bytes], source.originalFilename, { type: "text/html" });
     const validated = await validateHtml(file);
     const stored = await putVersionObject(context.env.FILES, projectId, crypto.randomUUID(), validated);
     try {

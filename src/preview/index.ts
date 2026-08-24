@@ -1,6 +1,7 @@
 import { Hono } from "hono";
 import { ProjectRepository } from "../shared/repository";
 import type { Env } from "../shared/types";
+import { getStoredBytes } from "../shared/storage";
 import { forbiddenPage, galleryPage, notFoundPage, previewPage, PUBLIC_CSS } from "./pages";
 
 export const previewApp = new Hono<{ Bindings: Env }>();
@@ -49,9 +50,9 @@ previewApp.get("/raw/:shareId", async (context) => {
   const resolved = await resolveVersion(new ProjectRepository(context.env.DB), "version", context.req.param("shareId"));
   if (!resolved || !resolved.project || !resolved.version) return html(notFoundPage(), 404);
   if (!allowed(resolved.project)) return html(forbiddenPage(), 403);
-  const object = await context.env.FILES.get(resolved.version.objectKey);
-  if (!object) return html(notFoundPage(), 404);
-  return new Response(object.body, { headers: {
+  const bytes = await getStoredBytes(context.env.FILES, resolved.version.objectKey);
+  if (!bytes) return html(notFoundPage(), 404);
+  return new Response(bytes, { headers: {
     "Content-Type": "text/html; charset=utf-8", "Cache-Control": "public, max-age=300",
     "X-Content-Type-Options": "nosniff", "Referrer-Policy": "no-referrer",
     "Content-Security-Policy": "default-src * data: blob: 'unsafe-inline' 'unsafe-eval'; frame-ancestors 'self'"

@@ -74,7 +74,7 @@ export function registerMigrationRoutes(app: AdminApp): void {
         coverObjectKey = `migration/covers/${legacyId}/${crypto.randomUUID()}${extension(cover.name)}`;
         const coverBytes = await cover.arrayBuffer();
         coverResult = { objectKey: coverObjectKey, originalFilename: cover.name, fileSize: cover.size, sha256: await sha256(coverBytes) };
-        await context.env.FILES.put(coverObjectKey, coverBytes, { httpMetadata: { contentType: cover.type || "application/octet-stream" }, customMetadata: { sha256: coverResult.sha256, originalFilename: cover.name } });
+        await context.env.FILES.put(coverObjectKey, coverBytes, { metadata: { contentType: cover.type || "application/octet-stream", sha256: coverResult.sha256, originalFilename: cover.name } });
         objectKeys.push(coverObjectKey);
       }
 
