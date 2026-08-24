@@ -1,0 +1,12 @@
+<!doctype html>
+<html lang="zh-CN">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>HTML 项目管理</title><link rel="stylesheet" href="/styles.css"></head>
+<body>
+  <main id="login" class="auth-shell"><form id="login-form" class="panel auth-card"><span class="eyebrow">HTML PREVIEW</span><h1>管理后台</h1><p class="muted">上传一个 HTML，生成开发可直接打开的永久链接。</p><label>管理员密码<input id="password" type="password" autocomplete="current-password" required></label><button class="primary" type="submit">登录</button><p id="login-error" class="error" role="alert"></p></form></main>
+  <main id="app" class="hidden">
+    <header class="topbar"><div><span class="eyebrow">HTML PREVIEW</span><h1>项目管理</h1></div><div class="actions"><button id="new-project" class="primary">新建项目</button><button id="logout" class="ghost">退出</button></div></header>
+    <section class="layout"><aside><nav id="filters"><button data-filter="active" class="selected">使用中</button><button data-filter="archived">已归档</button><button data-filter="trashed">回收站</button></nav></aside><section><div id="projects" class="cards"></div><div id="detail"></div></section></section>
+  </main>
+  <dialog id="project-dialog"><form id="project-form" method="dialog" class="panel"><h2>新建项目</h2><label>项目名称<input name="name" required maxlength="80"></label><label>说明<textarea name="description" rows="3"></textarea></label><label class="check"><input name="isPublic" type="checkbox" checked> 允许拿到链接的访客查看</label><div class="actions"><button value="cancel" class="ghost">取消</button><button id="create-project" value="default" class="primary">创建</button></div></form></dialog>
+  <script type="module" src="/app.js"></script>
+</body></html>

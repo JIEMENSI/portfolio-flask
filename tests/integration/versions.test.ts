@@ -44,6 +44,12 @@ describe("version workflows", () => {
     expect([v1.versionNumber, v2.versionNumber]).toEqual([1, 2]);
     expect(v1.objectKey).not.toBe(v2.objectKey);
     expect(await (await testEnv.FILES.get(v1.objectKey))?.text()).toContain("V1");
+
+    const detail = await adminApp.request(`/api/projects/${project.id}`, { headers }, testEnv);
+    expect(detail.status).toBe(200);
+    const payload = await detail.json<{ versions: { versionNumber: number }[]; previewBaseUrl: string }>();
+    expect(payload.versions.map((version) => version.versionNumber)).toEqual([2, 1]);
+    expect(payload.previewBaseUrl).toBe("http://preview.local");
   });
 
   it("restores V1 by creating V3 with identical content", async () => {

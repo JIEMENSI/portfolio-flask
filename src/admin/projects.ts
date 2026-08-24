@@ -24,6 +24,19 @@ export function registerProjectRoutes(app: AdminApp): void {
     return context.json({ projects: await new ProjectRepository(context.env.DB).listProjects() });
   });
 
+  app.get("/api/projects/:id", async (context) => {
+    const denied = await authorize(context);
+    if (denied) return denied;
+    const repo = new ProjectRepository(context.env.DB);
+    const project = await repo.getProject(context.req.param("id"));
+    if (!project) return context.json({ error: "项目不存在" }, 404);
+    return context.json({
+      project,
+      versions: await repo.listVersions(project.id),
+      previewBaseUrl: context.env.PREVIEW_BASE_URL ?? ""
+    });
+  });
+
   app.post("/api/projects", async (context) => {
     const denied = await authorize(context, true);
     if (denied) return denied;
