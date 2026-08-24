@@ -131,6 +131,18 @@ export class ProjectRepository {
     return row ? mapVersion(row) : null;
   }
 
+  async getVersion(id: string): Promise<Version | null> {
+    const row = await this.db.prepare("SELECT * FROM versions WHERE id = ? AND deleted_at IS NULL")
+      .bind(id).first<VersionRow>();
+    return row ? mapVersion(row) : null;
+  }
+
+  async getVersionByShareId(shareId: string): Promise<Version | null> {
+    const row = await this.db.prepare("SELECT * FROM versions WHERE share_id = ? AND deleted_at IS NULL")
+      .bind(shareId).first<VersionRow>();
+    return row ? mapVersion(row) : null;
+  }
+
   async listVersions(projectId: string): Promise<Version[]> {
     const result = await this.db.prepare("SELECT * FROM versions WHERE project_id = ? AND deleted_at IS NULL ORDER BY version_number DESC")
       .bind(projectId).all<VersionRow>();
