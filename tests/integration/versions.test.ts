@@ -4,7 +4,7 @@ import { adminApp } from "../../src/admin/index";
 import type { Env } from "../../src/shared/types";
 import { loginHeaders, resetDatabase } from "../helpers/admin";
 
-const testEnv = { ...(env as unknown as Env), ADMIN_PASSWORD_HASH: "pbkdf2$100000$00112233445566778899aabbccddeeff$baef35f707683ac1635ccb699a498db6a227243d1742a0c5837d6a0f65fc14ea", SESSION_PEPPER: "test-pepper" } satisfies Env;
+const testEnv = { ...(env as unknown as Env), ADMIN_PASSWORD_HASH: "pbkdf2$100000$00112233445566778899aabbccddeeff$baef35f707683ac1635ccb699a498db6a227243d1742a0c5837d6a0f65fc14ea", SESSION_PEPPER: "test-pepper", PREVIEW_BASE_URL: "http://preview.local" } satisfies Env;
 
 async function createProject(headers: Record<string, string>) {
   const response = await adminApp.request("/api/projects", {

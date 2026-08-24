@@ -4,10 +4,13 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "test": "vitest run",
+    "test": "vitest run && node --test tests/unit/config.test.ts",
+    "test:workers": "vitest run",
+    "test:config": "node --test tests/unit/config.test.ts",
     "test:watch": "vitest",
     "typecheck": "tsc --noEmit",
-    "build": "wrangler deploy --dry-run --config wrangler.admin.toml && wrangler deploy --dry-run --config wrangler.preview.toml"
+    "build": "wrangler deploy --dry-run --config wrangler.admin.toml && wrangler deploy --dry-run --config wrangler.preview.toml",
+    "config:deploy": "node scripts/render_deploy_configs.mjs"
   },
   "dependencies": {
     "hono": "^4.9.0"

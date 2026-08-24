@@ -58,3 +58,6 @@ node_modules/
 .wrangler/
 dist/
 migration-report.json
+.deploy/
+portfolio-backup-*.zip
+portfolio-backup-*.tar.gz

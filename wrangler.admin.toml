@@ -10,11 +10,11 @@ run_worker_first = ["/api/*", "/health"]
 [[d1_databases]]
 binding = "DB"
 database_name = "html-preview"
-database_id = "local-placeholder"
+database_id = "D1_DATABASE_ID"
 
 [[r2_buckets]]
 binding = "FILES"
 bucket_name = "html-preview-files"
 
 [vars]
-PREVIEW_BASE_URL = "http://preview.local"
+PREVIEW_BASE_URL = "PREVIEW_WORKER_URL"
