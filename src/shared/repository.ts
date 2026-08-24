@@ -137,6 +137,31 @@ export class ProjectRepository {
     return result.results.map(mapVersion);
   }
 
+  async reserveIdempotencyKey(key: string): Promise<{ reserved: boolean; responseJson: string | null }> {
+    const result = await this.db.prepare(
+      "INSERT OR IGNORE INTO idempotency_keys (key, response_json, created_at) VALUES (?, ?, ?)"
+    ).bind(key, "__PENDING__", new Date().toISOString()).run();
+    if ((result.meta.changes ?? 0) > 0) return { reserved: true, responseJson: null };
+    const row = await this.db.prepare("SELECT response_json FROM idempotency_keys WHERE key = ?")
+      .bind(key).first<{ response_json: string }>();
+    return { reserved: false, responseJson: row?.response_json === "__PENDING__" ? null : row?.response_json ?? null };
+  }
+
+  async completeIdempotencyKey(key: string, responseJson: string): Promise<void> {
+    await this.db.prepare("UPDATE idempotency_keys SET response_json = ? WHERE key = ?")
+      .bind(responseJson, key).run();
+  }
+
+  async releaseIdempotencyKey(key: string): Promise<void> {
+    await this.db.prepare("DELETE FROM idempotency_keys WHERE key = ? AND response_json = '__PENDING__'")
+      .bind(key).run();
+  }
+
+  async markVersionDeleted(id: string, deletedAt: string | null): Promise<void> {
+    await this.db.prepare("UPDATE versions SET deleted_at = ? WHERE id = ?")
+      .bind(deletedAt, id).run();
+  }
+
   async archiveProject(id: string): Promise<void> {
     await this.setStatus(id, "archived");
   }
