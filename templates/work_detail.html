@@ -82,20 +82,6 @@
           预览作品
         </a>
       </div>
-    </div>
-
-    <!-- 右侧预览卡片 -->
-    <div class="preview-card animate-slide-right">
-      <div class="preview-header">
-        <div class="preview-title">
-          <span class="preview-dot"></span>
-          作品预览
-        </div>
-        <span class="preview-hint">下方为嵌入的 HTML 内容</span>
-      </div>
-      <div class="iframe-container">
-        <iframe src="{{ url_for('preview', work_id=work.id) }}" sandbox="allow-scripts allow-same-origin allow-forms" title="{{ work.title }}"></iframe>
-      </div>
 
       {% if work.description %}
       <div class="work-description-card animate-slide-up">
@@ -111,6 +97,20 @@
         <p class="work-description-text">{{ work.description }}</p>
       </div>
       {% endif %}
+    </div>
+
+    <!-- 右侧预览卡片 -->
+    <div class="preview-card animate-slide-right">
+      <div class="preview-header">
+        <div class="preview-title">
+          <span class="preview-dot"></span>
+          作品预览
+        </div>
+        <span class="preview-hint">下方为嵌入的 HTML 内容</span>
+      </div>
+      <div class="iframe-container">
+        <iframe src="{{ url_for('preview', work_id=work.id) }}" sandbox="allow-scripts allow-same-origin allow-forms" title="{{ work.title }}"></iframe>
+      </div>
     </div>
   </div>
 </div>
