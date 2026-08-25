@@ -30,11 +30,7 @@
         </svg>
       </div>
       <h1 class="work-info-title">{{ work.title }}</h1>
-      
-      {% if work.description %}
-      <p class="work-info-desc">{{ work.description }}</p>
-      {% endif %}
-      
+
       <div class="work-info-meta-list">
         <div class="meta-item">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -102,6 +98,22 @@
       </div>
     </div>
   </div>
+
+  {% if work.description %}
+  <!-- 项目描述（置于页面最底部） -->
+  <div class="work-description-card animate-slide-up">
+    <div class="work-description-header">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/>
+        <polyline points="14 2 14 8 20 8"/>
+        <line x1="16" y1="13" x2="8" y2="13"/>
+        <line x1="16" y1="17" x2="8" y2="17"/>
+      </svg>
+      项目描述
+    </div>
+    <p class="work-description-text">{{ work.description }}</p>
+  </div>
+  {% endif %}
 </div>
 
 <style>
@@ -138,10 +150,26 @@
     box-shadow: 0 8px 20px rgba(124, 58, 237, 0.3);
   }
   
-  .work-info-desc {
+  .work-description-card {
+    margin-top: 1.5rem;
+    padding: 1.5rem 1.75rem;
+  }
+
+  .work-description-header {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-weight: 600;
+    color: #333;
+    margin-bottom: 0.75rem;
+  }
+  .work-description-header svg { color: #7c3aed; }
+
+  .work-description-text {
     color: #555;
-    line-height: 1.7;
+    line-height: 1.8;
     font-size: 0.9375rem;
+    white-space: pre-line;
   }
   
   .work-info-meta-list {
