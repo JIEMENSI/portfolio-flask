@@ -43,6 +43,7 @@ instance/
 data/works.json
 data/avatars.json
 data/groups.json
+data/rivalry/
 static/uploads/
 static/covers/
 static/avatars/

@@ -29,6 +29,10 @@ python3 app.py
 
 然后访问 http://127.0.0.1:5000
 
+## 电商主图 3:4 → 1:1 扩图工具
+
+已独立为单独项目（`../image-tool-1x1`），启动方式见其 README：`python image_tool_app.py`，端口 5001。
+
 ## 项目结构
 
 ```
