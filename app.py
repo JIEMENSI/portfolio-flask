@@ -29,6 +29,7 @@ app.config["AVATAR_FOLDER"] = os.path.join(BASE_DIR, "static", "avatars")
 app.config["MAX_CONTENT_LENGTH"] = 16 * 1024 * 1024  # 16MB max
 ALLOWED_COVER_EXT = {".png", ".jpg", ".jpeg", ".gif", ".webp"}
 ALLOWED_AVATAR_EXT = {".png", ".jpg", ".jpeg", ".gif", ".webp"}
+ALLOWED_HTML_EXT = {".html", ".htm"}
 app.config["SEND_FILE_MAX_AGE_DEFAULT"] = 60 * 60 * 24 * 7  # 静态资源默认缓存 7 天
 app.config["SESSION_COOKIE_HTTPONLY"] = True
 app.config["SESSION_COOKIE_SAMESITE"] = "Lax"
@@ -794,6 +795,19 @@ def _save_cover(file_storage, work_id):
     file_storage.save(dest)
     return cover_name
 
+def _save_html(file_storage, work_id):
+    """保存/替换作品 HTML 文件，返回文件名；格式不合法返回 None。
+    以 work_id 作为文件名主体，保证与封面、works.json 的 id 一致。"""
+    original = secure_filename(file_storage.filename)
+    ext = os.path.splitext(original)[1].lower()
+    if ext not in ALLOWED_HTML_EXT:
+        return None
+    html_name = f"{work_id}{ext}"
+    dest = os.path.join(app.config["UPLOAD_FOLDER"], html_name)
+    file_storage.save(dest)
+    _invalidate(dest)  # 同路径覆盖时按 mtime 失效不可靠，主动清缓存
+    return html_name
+
 @app.route("/admin/edit/<work_id>", methods=["GET", "POST"])
 @admin_required
 def edit_work(work_id):
@@ -811,10 +825,35 @@ def edit_work(work_id):
         is_public = request.form.get("is_public") == "on"
         cover = request.files.get("cover_file")
         remove_cover = request.form.get("remove_cover") == "1"
+        html_file = request.files.get("html_file")
 
         if not title:
             flash("请输入作品名称", "error")
             return redirect(url_for("edit_work", work_id=work_id))
+
+        # 替换 HTML 文件（可选：不选则保留原文件）
+        if html_file and html_file.filename:
+            original_html_name = html_file.filename
+            if not (original_html_name.lower().endswith(".html") or
+                    original_html_name.lower().endswith(".htm")):
+                flash("只支持上传 .html 或 .htm 文件", "error")
+                return redirect(url_for("edit_work", work_id=work_id))
+            new_html_name = _save_html(html_file, work_id)
+            if not new_html_name:
+                flash("HTML 文件保存失败，请重试", "error")
+                return redirect(url_for("edit_work", work_id=work_id))
+            # 删除旧文件（扩展名变化时旧文件会残留）
+            old_filename = work.get("filename", "")
+            if old_filename and old_filename != new_html_name:
+                old_path = os.path.join(app.config["UPLOAD_FOLDER"], old_filename)
+                if os.path.exists(old_path):
+                    try:
+                        os.remove(old_path)
+                    except Exception:
+                        pass
+                _invalidate(old_path)
+            work["filename"] = new_html_name
+            work["original_name"] = secure_filename(original_html_name)
 
         # 若分组不存在则自动添加
         groups = load_groups()
@@ -853,7 +892,10 @@ def edit_work(work_id):
                 flash("封面图格式不支持（仅 png/jpg/jpeg/gif/webp）", "error")
 
         save_works(works)
-        flash("作品信息已更新", "success")
+        if html_file and html_file.filename:
+            flash("作品信息已更新，HTML 文件已替换", "success")
+        else:
+            flash("作品信息已更新", "success")
         return redirect(url_for("admin"))
 
     groups = load_groups()

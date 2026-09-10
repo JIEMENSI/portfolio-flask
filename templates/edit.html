@@ -20,7 +20,7 @@
       </div>
       <div>
         <h1 class="edit-title">编辑作品</h1>
-        <p class="edit-subtitle">更新作品信息和封面</p>
+        <p class="edit-subtitle">更新作品信息、HTML 文件与封面</p>
       </div>
     </div>
 
@@ -66,6 +66,51 @@
             <span class="toggle-desc">开启后游客可查看此作品，关闭后仅管理员可见</span>
           </div>
         </div>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">当前 HTML 文件</label>
+        <div class="current-file">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+            <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/>
+            <polyline points="14 2 14 8 20 8"/>
+          </svg>
+          <span class="current-file-name">{{ work.original_name or work.filename }}</span>
+          <a class="current-file-link" href="{{ url_for('preview', work_id=work.id) }}" target="_blank" rel="noopener">预览</a>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">替换 HTML 文件</label>
+        <div class="file-upload-area" id="html_upload_area">
+          <div class="upload-placeholder" id="html_placeholder">
+            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+              <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/>
+              <polyline points="17 8 12 3 7 8"/>
+              <line x1="12" y1="3" x2="12" y2="15"/>
+            </svg>
+            <div class="upload-text">
+              <span class="upload-click">点击选择新文件</span>
+              <span class="upload-desc">支持 .html / .htm，不选择则保留原文件</span>
+            </div>
+          </div>
+          <div class="file-selected-display" id="html_selected" style="display:none;">
+            <div class="selected-icon">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/>
+                <polyline points="14 2 14 8 20 8"/>
+                <polyline points="9 15 11 17 15 13"/>
+              </svg>
+            </div>
+            <div class="selected-info">
+              <span class="selected-name" id="html_name"></span>
+              <span class="selected-size" id="html_size"></span>
+            </div>
+            <span class="selected-status">已选择</span>
+          </div>
+          <input type="file" id="html_file" name="html_file" accept=".html,.htm" class="file-input-hidden">
+        </div>
+        <p class="form-hint">替换后将覆盖当前作品内容，封面与作品信息保持不变</p>
       </div>
 
       <div class="form-group">
@@ -179,6 +224,39 @@
   
   .edit-form {
     margin-top: 1rem;
+  }
+  
+  .current-file {
+    display: flex;
+    align-items: center;
+    gap: 0.625rem;
+    padding: 0.75rem 1rem;
+    background: #f8f8fa;
+    border: 1px solid #eee;
+    border-radius: 0.75rem;
+    color: #555;
+  }
+  .current-file-name {
+    flex: 1;
+    min-width: 0;
+    font-size: 0.875rem;
+    font-weight: 600;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .current-file-link {
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: #7c3aed;
+    text-decoration: none;
+    padding: 0.25rem 0.625rem;
+    border-radius: 9999px;
+    background: rgba(124, 58, 237, 0.1);
+    flex-shrink: 0;
+  }
+  .current-file-link:hover {
+    background: rgba(124, 58, 237, 0.2);
   }
   
   .cover-preview-section {
@@ -429,16 +507,17 @@
     return (bytes / 1024 / 1024).toFixed(1) + ' MB';
   }
 
-  var input = document.getElementById('cover_file');
-  if (input) {
+  function setupFileInput(inputId, placeholderId, selectedId, nameId, sizeId, areaId) {
+    var input = document.getElementById(inputId);
+    if (!input) return;
     input.addEventListener('change', function(e) {
       var file = e.target.files[0];
       if (file) {
-        var placeholder = document.getElementById('cover_placeholder');
-        var selected = document.getElementById('cover_selected');
-        var area = document.getElementById('cover_upload_area');
-        var nameEl = document.getElementById('cover_name');
-        var sizeEl = document.getElementById('cover_size');
+        var placeholder = document.getElementById(placeholderId);
+        var selected = document.getElementById(selectedId);
+        var area = document.getElementById(areaId);
+        var nameEl = document.getElementById(nameId);
+        var sizeEl = document.getElementById(sizeId);
 
         if (placeholder) placeholder.style.display = 'none';
         if (selected) {
@@ -450,6 +529,9 @@
       }
     });
   }
+
+  setupFileInput('html_file', 'html_placeholder', 'html_selected', 'html_name', 'html_size', 'html_upload_area');
+  setupFileInput('cover_file', 'cover_placeholder', 'cover_selected', 'cover_name', 'cover_size', 'cover_upload_area');
 
   // 公开开关标签切换
   var publicCheckbox = document.getElementById('is_public');
