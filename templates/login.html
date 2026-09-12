@@ -21,12 +21,7 @@
         </svg>
       </div>
       <h1 class="page-title text-center" style="font-size:1.75rem;">欢迎回来</h1>
-      <p class="page-subtitle text-center">登录管理后台</p>
-      <div class="login-tip">
-        <span class="login-tip-title">后台登录支持：</span>
-        ① 作品管理后台账号<br>
-        ② Rivalry 客户端注册账号（邮箱 + 密码），登录后显示角色铭牌：超级管理员 / 主管理号 / 子管理号 / 普通账号
-      </div>
+      <p class="page-subtitle text-center">作品管理后台登录</p>
     </div>
 
     <form method="POST" action="{{ url_for('login') }}" class="login-form">
@@ -69,7 +64,7 @@
       </svg>
       游客浏览
     </a>
-    <p class="form-hint text-center" style="margin-top:0.75rem;">游客可浏览所有作品，但不能上传</p>
+    <p class="form-hint text-center" style="margin-top:0.75rem;">游客可浏览公开作品，但不能上传</p>
   </div>
 </div>
 
@@ -82,18 +77,6 @@
     text-align: center;
     margin-bottom: 2rem;
   }
-  .login-tip {
-    margin-top: 1rem;
-    padding: .7rem .9rem;
-    background: #f5f3ff;
-    border: 1px solid #ddd6fe;
-    color: #6d28d9;
-    border-radius: .8rem;
-    font-size: .78rem;
-    line-height: 1.7;
-    text-align: left;
-  }
-  .login-tip-title { font-weight: 700; }
   .login-icon {
     width: 64px;
     height: 64px;

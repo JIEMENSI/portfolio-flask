@@ -17,12 +17,6 @@
     .iframe-container { width: 100%; height: 80vh; border: 1px solid #EEE; border-radius: 1rem; overflow: hidden; }
     .iframe-container iframe { width: 100%; height: 100%; border: none; }
     .content-wrapper { position: relative; z-index: 1; }
-    .nav-role-badge { font-size:.72rem; font-weight:600; padding:.22rem .6rem; border-radius:999px;
-      border:1px solid transparent; white-space:nowrap; }
-    .role-super_admin { color:#92400e; background:#fffbeb; border-color:#fcd34d; }
-    .role-admin { color:#1e40af; background:#eff6ff; border-color:#93c5fd; }
-    .role-sub_admin { color:#166534; background:#f0fdf4; border-color:#86efac; }
-    .role-user { color:#4b5563; background:#f9fafb; border-color:#d1d5db; }
   </style>
   {% block extra_css %}{% endblock %}
   <link rel="stylesheet" href="{{ url_for('static', filename='css/works.css') }}?v=2">
@@ -109,9 +103,6 @@
         
         <div class="flex items-center gap-4">
           {% if session.get('role') == 'admin' %}
-            {% if nav_role_label %}
-            <span class="nav-role-badge role-{{ nav_role_key }}">{{ nav_role_label }}</span>
-            {% endif %}
             {% if request.endpoint == 'admin' %}
               <span class="nav-text-btn nav-text-btn-active">管理后台</span>
             {% else %}

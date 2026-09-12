@@ -43,8 +43,12 @@ instance/
 data/works.json
 data/avatars.json
 data/groups.json
-data/rivalry/
 static/uploads/
 static/covers/
 static/avatars/
 rebuild_data.py
+
+# 本地缓存 / 其他 worktree（不入库）
+.pnpm-store/
+.worktrees/
+data/.rebuild.lock

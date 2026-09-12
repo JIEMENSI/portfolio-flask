@@ -9,12 +9,6 @@ from functools import wraps
 from werkzeug.utils import secure_filename
 from werkzeug.security import check_password_hash
 
-# Rivalry 图集相册 API（挂在 /rivalry-api/ 下，详见 rivalry_api.py）
-from rivalry_api import (ROLE_LABEL, bp as rivalry_api_bp,
-                         _hash_password, uids_s, users_s)
-# Rivalry 图集管理后台（挂在 /rivalry-admin/ 下，复用本站 admin 登录）
-from rivalry_admin import adm as rivalry_admin_bp
-
 # 网站上线时间：2026年8月6日13时24分36秒
 SITE_LAUNCH_TIME = datetime(2026, 8, 6, 13, 24, 36).timestamp()
 
@@ -174,14 +168,11 @@ def save_visitor_stats(stats):
 
 @app.before_request
 def track_visitor():
-    """真实访客计数：同一浏览器会话只计 1 次，管理员不计"""
+    """真实访客计数：同一浏览器会话只计 1 次，已登录账号不计"""
     # 静态资源不计数
     if request.path.startswith("/static/"):
         return
-    # Rivalry API / 管理后台请求不计数
-    if request.path.startswith("/rivalry-api/") or request.path.startswith("/rivalry-admin/"):
-        return
-    # 管理员访问不计
+    # 作品后台管理员访问不计
     if session.get("role") == "admin":
         return
     # 同浏览器会话只计一次（刷新/翻页不重复）
@@ -452,14 +443,13 @@ def get_avatar_info(username):
     return f"avatars/{fname}", version
 
 def admin_required(f):
+    """作品管理后台守卫：仅 portfolio 管理员可用"""
     @wraps(f)
     def decorated_function(*args, **kwargs):
-        if session.get("role") != "admin":
+        role = session.get("role")
+        if role != "admin":
             flash("需要管理员账号才能上传作品", "error")
             return redirect(url_for("login"))
-        # Rivalry 注册用户只能进入图集管理后台，不能进入作品管理后台
-        if session.get("rivalry_admin_from_account") is False:
-            return redirect(url_for("rivalry_admin.index"))
         return f(*args, **kwargs)
     return decorated_function
 
@@ -501,7 +491,7 @@ def inject_user():
 
 @app.route("/")
 def index():
-    # 已登录用户看作品列表，未登录跳登录页
+    # 管理员/游客进作品列表；未登录跳登录页
     if session.get("role") in ("admin", "guest"):
         return redirect(url_for("works_list"))
     return redirect(url_for("login"))
@@ -554,11 +544,17 @@ def work_detail(work_id):
 
 @app.route("/preview/<work_id>")
 def preview(work_id):
-    """直接提供上传的 HTML 文件内容"""
+    """直接提供上传的 HTML 文件内容（需已登录；私有作品仅管理员可见）"""
+    if session.get("role") not in ("admin", "guest"):
+        return redirect(url_for("login"))
     works = load_works()
     work = next((w for w in works if w["id"] == work_id), None)
     if not work or not work.get("filename"):
         abort(404)
+    # 私有作品：非管理员不可预览（与 work_detail 的可见性保持一致）
+    if not work.get("is_public", True) and session.get("role") != "admin":
+        flash("该作品为私有，需要管理员权限查看", "error")
+        return redirect(url_for("works_list"))
     filepath = os.path.join(app.config["UPLOAD_FOLDER"], work["filename"])
     # 按 mtime 缓存文件内容，避免每次预览都读磁盘
     html_content = _cached_load(filepath, lambda f: f.read(), None)
@@ -573,35 +569,19 @@ def login():
     if request.method == "POST":
         username = request.form.get("username", "").strip()
         password = request.form.get("password", "")
-        # 1) portfolio 后台管理员账号（视为超级管理员）
         if verify_admin(username, password):
+            session.clear()
             session["role"] = "admin"
             session["username"] = username
-            session["rivalry_admin_from_account"] = True
-            session["rivalry_admin_role"] = "super_admin"
-            session.pop("rivalry_admin_uid", None)
             flash("管理员登录成功", "success")
             return redirect(url_for("admin"))
-        # 2) Rivalry 注册用户（邮箱 + 密码）
-        user = users_s.get(username.lower())
-        if user and _hash_password(password, user.get("salt", "")) == user.get("pw_hash"):
-            if user.get("banned"):
-                flash("账号已被拉黑，无法登录后台", "error")
-                return render_template("login.html")
-            role = user.get("role") or "user"
-            session["role"] = "admin"
-            session["username"] = username
-            session["rivalry_admin_from_account"] = False
-            session["rivalry_admin_role"] = role
-            session["rivalry_admin_uid"] = user.get("id") or ""
-            flash(f"登录成功，当前身份：{ROLE_LABEL.get(role, '普通账号')}", "success")
-            return redirect(url_for("rivalry_admin.index"))
         else:
             flash("账号或密码错误", "error")
     return render_template("login.html")
 
 @app.route("/guest_login")
 def guest_login():
+    session.clear()
     session["role"] = "guest"
     session["username"] = "游客114514"
     flash("已以游客身份进入，可浏览作品（不能上传）", "success")
@@ -999,11 +979,6 @@ def get_uptime():
 @app.errorhandler(404)
 def not_found(e):
     return render_template("404.html"), 404
-
-# Rivalry 图集相册 API（注册在 /rivalry-api/ 路径下）
-app.register_blueprint(rivalry_api_bp)
-# Rivalry 图集管理后台（注册在 /rivalry-admin/ 路径下）
-app.register_blueprint(rivalry_admin_bp)
 
 if __name__ == "__main__":
     # 初始化空数据
