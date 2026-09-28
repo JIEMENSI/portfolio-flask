@@ -123,6 +123,13 @@
                value="{{ login_settings.overlay_opacity }}" oninput="document.getElementById('overlay_val').textContent=this.value+'%';updatePreview();">
         <p class="settings-hint">背景太亮影响登录卡可读性时，加大此值添加半透明黑色遮罩</p>
       </div>
+
+      <div class="settings-row">
+        <label class="row-text" for="card_opacity">登录卡不透明度 <span class="val" id="card_opacity_val">{{ login_settings.card_opacity }}%</span></label>
+        <input type="range" id="card_opacity" name="card_opacity" min="0" max="100" step="2"
+               value="{{ login_settings.card_opacity }}" oninput="document.getElementById('card_opacity_val').textContent=this.value+'%';updatePreview();">
+        <p class="settings-hint">数值越小登录卡越透（背景图越明显），100% 为纯白不透明。配合上方"暗色遮罩"可保证文字可读。</p>
+      </div>
     </div>
 
     <!-- 下载权限 -->
@@ -526,7 +533,8 @@
         position_x: document.getElementById('position_x').value,
         position_y: document.getElementById('position_y').value,
         zoom: document.getElementById('zoom').value,
-        overlay_opacity: document.getElementById('overlay_opacity').value
+        overlay_opacity: document.getElementById('overlay_opacity').value,
+        card_opacity: document.getElementById('card_opacity').value
       });
       if (localBgUrl) { params.set('bg_url', localBgUrl); }  // 本地待上传图片，仅预览用
       document.getElementById('settings_preview').src =

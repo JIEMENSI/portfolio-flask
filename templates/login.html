@@ -179,9 +179,9 @@
   .page-login .floating-shape {
     display: none !important;
   }
-  /* 自定义背景时给卡片增加毛玻璃，提升可读性 */
+  /* 自定义背景时给卡片增加毛玻璃；不透明度由管理后台"登录卡不透明度"设置 */
   .page-login .login-card {
-    background: rgba(255, 255, 255, 0.96);
+    background: rgba(255, 255, 255, {{ (ls.card_opacity|default(96)) / 100 }});
     backdrop-filter: blur(10px);
     -webkit-backdrop-filter: blur(10px);
   }

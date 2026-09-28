@@ -201,6 +201,7 @@ DEFAULT_LOGIN_SETTINGS = {
     "position_y": 50,          # object-position Y（0-100%）
     "zoom": 100,               # 缩放 100-200%
     "overlay_opacity": 0,      # 半透明黑色遮罩的不透明度（0-60），用于保证白卡可读
+    "card_opacity": 96,        # 登录卡不透明度（0-100），越小越透出背景图
     "allow_guest_download": True,  # 是否允许游客下载作品 HTML 源文件（管理员始终可下载）
     "updated_at": "",
 }
@@ -1044,6 +1045,7 @@ def admin_settings():
             settings["position_y"] = max(0, min(100, int(request.form.get("position_y", 50))))
             settings["zoom"] = max(100, min(200, int(request.form.get("zoom", 100))))
             settings["overlay_opacity"] = max(0, min(60, int(request.form.get("overlay_opacity", 0))))
+            settings["card_opacity"] = max(0, min(100, int(request.form.get("card_opacity", 96))))
         except (ValueError, TypeError):
             flash("参数格式不正确", "error")
             return redirect(url_for("admin_settings"))
@@ -1108,7 +1110,8 @@ def admin_login_preview():
     if "fit_mode" in request.args:
         settings["fit_mode"] = "contain" if request.args.get("fit_mode") == "contain" else "cover"
     for k, lo, hi in [("position_x", 0, 100), ("position_y", 0, 100),
-                       ("zoom", 100, 200), ("overlay_opacity", 0, 60)]:
+                       ("zoom", 100, 200), ("overlay_opacity", 0, 60),
+                       ("card_opacity", 0, 100)]:
         if k in request.args:
             try:
                 settings[k] = max(lo, min(hi, int(request.args.get(k))))
