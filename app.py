@@ -588,17 +588,18 @@ def work_detail(work_id):
 
 @app.route("/preview/<work_id>")
 def preview(work_id):
-    """直接提供上传的 HTML 文件内容（需已登录；私有作品仅管理员可见）"""
-    if session.get("role") not in ("admin", "guest"):
-        return redirect(url_for("login"))
+    """提供上传的 HTML 文件内容：公开作品任何人（含未登录）可预览；私有作品仅管理员"""
     works = load_works()
     work = next((w for w in works if w["id"] == work_id), None)
     if not work or not work.get("filename"):
         abort(404)
+    role = session.get("role")
     # 私有作品：非管理员不可预览（与 work_detail 的可见性保持一致）
-    if not work.get("is_public", True) and session.get("role") != "admin":
-        flash("该作品为私有，需要管理员权限查看", "error")
-        return redirect(url_for("works_list"))
+    if not work.get("is_public", True) and role != "admin":
+        if role in ("admin", "guest"):
+            flash("该作品为私有，需要管理员权限查看", "error")
+            return redirect(url_for("works_list"))
+        return redirect(url_for("login"))
     filepath = os.path.join(app.config["UPLOAD_FOLDER"], work["filename"])
     # 按 mtime 缓存文件内容，避免每次预览都读磁盘
     html_content = _cached_load(filepath, lambda f: f.read(), None)
