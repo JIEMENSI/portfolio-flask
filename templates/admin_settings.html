@@ -1,0 +1,519 @@
+{% extends "base.html" %}
+{% block title %}站点设置 - 个人作品集{% endblock %}
+
+{% block content %}
+<div class="page-container page-fade-in">
+  <a href="{{ url_for('admin') }}" class="back-link">
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-right:6px;">
+      <path d="M19 12H5M12 19l-7-7 7-7"/>
+    </svg>
+    返回管理后台
+  </a>
+
+  <div class="settings-header animate-slide-left">
+    <div class="settings-header-left">
+      <div class="settings-badge">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <circle cx="12" cy="12" r="3"/>
+          <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.6 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9 1.65 1.65 0 0 0 4.27 7.18l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.6a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09A1.65 1.65 0 0 0 15 4.6a1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9c.36.16.68.4.93.71.25.31.43.67.51 1.06.08.39.06.79-.06 1.18"/>
+        </svg>
+      </div>
+      <div>
+        <h1 class="page-title" style="font-size:1.8rem;">站点设置</h1>
+        <p class="page-subtitle">自定义登录页背景，以及作品源文件的下载权限</p>
+      </div>
+    </div>
+    {% if login_settings.updated_at %}
+    <span class="settings-updated">最后更新：{{ login_settings.updated_at }}</span>
+    {% endif %}
+  </div>
+
+  <form method="POST" action="{{ url_for('admin_settings') }}" enctype="multipart/form-data" id="settingsForm">
+    <!-- 背景图 -->
+    <div class="card settings-card animate-on-scroll">
+      <div class="card-section-title">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
+          <circle cx="8.5" cy="8.5" r="1.5"/>
+          <polyline points="21 15 16 10 5 21"/>
+        </svg>
+        背景图
+      </div>
+      <div class="settings-bg-row">
+        <div class="settings-bg-preview">
+          {% if login_settings.background_image %}
+            <img id="current_bg_img"
+                 src="{{ url_for('static', filename='images/' + login_settings.background_image) }}?v={{ login_settings.updated_at|default('1') }}"
+                 alt="当前背景图">
+          {% else %}
+            <div class="settings-bg-empty">
+              <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
+                <circle cx="8.5" cy="8.5" r="1.5"/>
+                <polyline points="21 15 16 10 5 21"/>
+              </svg>
+              <p>未上传背景图</p>
+              <span>上传后将以原图显示在登录页</span>
+            </div>
+          {% endif %}
+        </div>
+        <div class="settings-bg-controls">
+          <label class="file-pick">
+            <input type="file" name="login_bg" accept=".jpg,.jpeg,.png,.webp" id="bgFileInput">
+            <span class="btn btn-secondary">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                <polyline points="17 8 12 3 7 8"/>
+                <line x1="12" y1="3" x2="12" y2="15"/>
+              </svg>
+              {{ '替换图片' if login_settings.background_image else '选择图片' }}
+            </span>
+          </label>
+          <p class="settings-hint">支持 jpg / jpeg / png / webp，最大 5MB。建议分辨率 ≥ 1920×1080（16:9 或更宽）。上传后立即替换原图。</p>
+          <p class="settings-hint" id="selectedFileName" style="display:none;"></p>
+        </div>
+      </div>
+    </div>
+
+    <!-- 显示方式 -->
+    <div class="card settings-card animate-on-scroll">
+      <div class="card-section-title">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M4 7V2h4"></path><path d="M20 7v-5h-4"></path>
+          <path d="M4 17v5h4"></path><path d="M20 17v5h-4"></path>
+        </svg>
+        显示方式（裁剪页面大小）
+      </div>
+
+      <div class="settings-row">
+        <label class="row-text">填充模式</label>
+        <div class="radio-group">
+          <label class="radio-pill">
+            <input type="radio" name="fit_mode" value="cover" {% if login_settings.fit_mode != 'contain' %}checked{% endif %} onchange="updatePreview()">
+            <span>裁剪填满（cover）</span>
+          </label>
+          <label class="radio-pill">
+            <input type="radio" name="fit_mode" value="contain" {% if login_settings.fit_mode == 'contain' %}checked{% endif %} onchange="updatePreview()">
+            <span>完整显示（contain）</span>
+          </label>
+        </div>
+        <p class="settings-hint">裁剪填满：图片按比例缩放铺满整个屏幕，超出部分裁掉；完整显示：图片完整显示，可能留黑边</p>
+      </div>
+
+      <div class="settings-row">
+        <label class="row-text" for="position_x">水平位置 <span class="val" id="pos_x_val">{{ login_settings.position_x }}%</span></label>
+        <input type="range" id="position_x" name="position_x" min="0" max="100"
+               value="{{ login_settings.position_x }}" oninput="document.getElementById('pos_x_val').textContent=this.value+'%';updatePreview();">
+        <p class="settings-hint">控制图片在水平方向上的对齐位置（左 0% / 居中 50% / 右 100%）</p>
+      </div>
+
+      <div class="settings-row">
+        <label class="row-text" for="position_y">垂直位置 <span class="val" id="pos_y_val">{{ login_settings.position_y }}%</span></label>
+        <input type="range" id="position_y" name="position_y" min="0" max="100"
+               value="{{ login_settings.position_y }}" oninput="document.getElementById('pos_y_val').textContent=this.value+'%';updatePreview();">
+        <p class="settings-hint">控制图片在垂直方向上的对齐位置（上 0% / 居中 50% / 下 100%）</p>
+      </div>
+
+      <div class="settings-row">
+        <label class="row-text" for="zoom">缩放 <span class="val" id="zoom_val">{{ login_settings.zoom }}%</span></label>
+        <input type="range" id="zoom" name="zoom" min="100" max="200" step="5"
+               value="{{ login_settings.zoom }}" oninput="document.getElementById('zoom_val').textContent=this.value+'%';updatePreview();">
+        <p class="settings-hint">放大图片以裁掉不需要的部分（最大 200%）</p>
+      </div>
+
+      <div class="settings-row">
+        <label class="row-text" for="overlay_opacity">暗色遮罩 <span class="val" id="overlay_val">{{ login_settings.overlay_opacity }}%</span></label>
+        <input type="range" id="overlay_opacity" name="overlay_opacity" min="0" max="60"
+               value="{{ login_settings.overlay_opacity }}" oninput="document.getElementById('overlay_val').textContent=this.value+'%';updatePreview();">
+        <p class="settings-hint">背景太亮影响登录卡可读性时，加大此值添加半透明黑色遮罩</p>
+      </div>
+    </div>
+
+    <!-- 下载权限 -->
+    <div class="card settings-card animate-on-scroll">
+      <div class="card-section-title">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+          <polyline points="7 10 12 15 17 10"/>
+          <line x1="12" y1="15" x2="12" y2="3"/>
+        </svg>
+        下载权限
+      </div>
+      <div class="settings-toggle-row">
+        <div class="settings-toggle-text">
+          <label class="row-text" for="allow_guest_download" style="margin-bottom:0.4rem;">允许游客下载作品 HTML 源文件</label>
+          <p class="settings-hint">开启后，游客可在作品广场或详情页下载源文件；关闭后仅管理员可下载（游客仍可在线预览）。管理员始终可下载。</p>
+        </div>
+        <label class="switch">
+          <input type="checkbox" id="allow_guest_download" name="allow_guest_download"
+                 {% if login_settings.allow_guest_download %}checked{% endif %}>
+          <span class="slider"></span>
+        </label>
+      </div>
+    </div>
+
+    <!-- 实时预览 -->
+    <div class="card settings-card animate-on-scroll">
+      <div class="card-section-title">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/>
+        </svg>
+        实时预览（拖动上方滑块时即时更新）
+        <button type="button" class="btn-mini" onclick="document.getElementById('settings_preview').contentWindow.location.reload();" title="刷新预览">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M23 4v6h-6"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/>
+          </svg>
+        </button>
+      </div>
+      <iframe id="settings_preview" class="settings-preview-iframe"
+              src="{{ url_for('admin_login_preview') }}"
+              title="登录页预览"></iframe>
+      <p class="settings-hint" style="margin-top:0.75rem;">提示：调整参数时预览实时更新；满意后点"保存设置"才会真正生效到登录页。</p>
+    </div>
+
+    <!-- 操作按钮 -->
+    <div class="settings-actions">
+      <button type="submit" class="btn btn-primary">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="margin-right:6px;">
+          <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/>
+          <polyline points="17 21 17 13 7 13 7 21"/>
+          <polyline points="7 3 7 8 15 8"/>
+        </svg>
+        保存设置
+      </button>
+      <form method="POST" action="{{ url_for('admin_settings_reset') }}" style="display:inline;" onsubmit="return confirm('确定要恢复默认设置并删除已上传的自定义背景图吗？');">
+        <button type="submit" class="btn btn-danger">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-right:6px;">
+            <path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/>
+            <path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
+          </svg>
+          恢复默认
+        </button>
+      </form>
+    </div>
+  </form>
+</div>
+
+<style>
+  .settings-header {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    margin-bottom: 2rem;
+    padding: 1.5rem 2rem;
+    background: rgba(255, 255, 255, 0.85);
+    border-radius: 1.5rem;
+    border: 1px solid rgba(255, 255, 255, 0.8);
+    box-shadow: 0 8px 32px rgba(124, 58, 237, 0.08);
+    position: relative;
+    overflow: hidden;
+  }
+  .settings-header::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 4px;
+    background: linear-gradient(90deg, #7c3aed, #ec4899, #22d3ee);
+  }
+  .settings-header-left {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+  }
+  .settings-badge {
+    width: 52px;
+    height: 52px;
+    background: linear-gradient(135deg, #7c3aed, #ec4899);
+    border-radius: 0.875rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    box-shadow: 0 8px 20px rgba(124, 58, 237, 0.3);
+  }
+  .settings-updated {
+    font-size: 0.8125rem;
+    color: #777;
+    padding: 0.375rem 0.875rem;
+    background: rgba(124, 58, 237, 0.08);
+    border-radius: 999px;
+  }
+
+  .settings-card {
+    margin-bottom: 1.25rem;
+    padding: 1.5rem 1.75rem;
+  }
+  .card-section-title {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-weight: 600;
+    color: #333;
+    margin-bottom: 1rem;
+    font-size: 1rem;
+  }
+  .card-section-title svg { color: #7c3aed; }
+
+  .settings-bg-row {
+    display: flex;
+    gap: 1.5rem;
+    flex-wrap: wrap;
+  }
+  .settings-bg-preview {
+    flex: 0 0 280px;
+    height: 180px;
+    border-radius: 0.875rem;
+    overflow: hidden;
+    border: 1.5px solid #eee;
+    background: #f8f8fa;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .settings-bg-preview img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+  .settings-bg-empty {
+    text-align: center;
+    color: #aaa;
+  }
+  .settings-bg-empty p { margin: 0.5rem 0 0.25rem; font-weight: 500; color: #777; }
+  .settings-bg-empty span { font-size: 0.75rem; }
+  .settings-bg-controls {
+    flex: 1;
+    min-width: 240px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    gap: 0.5rem;
+  }
+  .file-pick { display: inline-block; cursor: pointer; }
+  .file-pick input[type=file] {
+    position: absolute;
+    width: 1px; height: 1px;
+    padding: 0; margin: -1px;
+    overflow: hidden; clip: rect(0,0,0,0);
+    border: 0;
+  }
+  .settings-hint { font-size: 0.8125rem; color: #888; line-height: 1.6; margin: 0; }
+
+  .settings-row {
+    padding: 0.875rem 0;
+    border-top: 1px solid #f0f0f0;
+  }
+  .settings-row:first-of-type { border-top: none; padding-top: 0; }
+  .row-text {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    font-weight: 500;
+    color: #444;
+    margin-bottom: 0.625rem;
+  }
+  .row-text .val {
+    color: #7c3aed;
+    font-weight: 600;
+    font-size: 0.875rem;
+    padding: 0.125rem 0.625rem;
+    background: rgba(124, 58, 237, 0.1);
+    border-radius: 999px;
+    font-variant-numeric: tabular-nums;
+  }
+  .settings-row input[type=range] {
+    width: 100%;
+    accent-color: #7c3aed;
+    margin: 0;
+  }
+
+  .radio-group {
+    display: flex;
+    gap: 0.625rem;
+    flex-wrap: wrap;
+  }
+  .radio-pill {
+    display: inline-flex;
+    align-items: center;
+    padding: 0.5rem 1rem;
+    border-radius: 999px;
+    border: 1.5px solid #e5e5e5;
+    background: #fff;
+    cursor: pointer;
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: #555;
+    transition: all 0.2s ease;
+  }
+  .radio-pill:hover {
+    border-color: rgba(124, 58, 237, 0.35);
+    color: #7c3aed;
+  }
+  .radio-pill input { display: none; }
+  .radio-pill:has(input:checked) {
+    background: linear-gradient(135deg, rgba(124, 58, 237, 0.1), rgba(236, 72, 153, 0.1));
+    border-color: #7c3aed;
+    color: #7c3aed;
+  }
+
+  /* 下载权限开关 */
+  .settings-toggle-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1.25rem;
+  }
+  .settings-toggle-text { flex: 1; }
+  .switch {
+    position: relative;
+    display: inline-block;
+    width: 52px;
+    height: 30px;
+    flex: 0 0 auto;
+  }
+  .switch input {
+    opacity: 0;
+    width: 0;
+    height: 0;
+  }
+  .switch .slider {
+    position: absolute;
+    inset: 0;
+    cursor: pointer;
+    background: #d4d4d8;
+    border-radius: 999px;
+    transition: background 0.25s ease, box-shadow 0.25s ease;
+  }
+  .switch .slider::before {
+    content: '';
+    position: absolute;
+    height: 24px;
+    width: 24px;
+    left: 3px;
+    top: 3px;
+    background: #fff;
+    border-radius: 50%;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
+    transition: transform 0.25s ease;
+  }
+  .switch input:checked + .slider {
+    background: linear-gradient(135deg, #7c3aed, #ec4899);
+  }
+  .switch input:checked + .slider::before {
+    transform: translateX(22px);
+  }
+  .switch input:focus-visible + .slider {
+    box-shadow: 0 0 0 3px rgba(124, 58, 237, 0.25);
+  }
+
+  .settings-preview-iframe {
+    width: 100%;
+    height: 560px;
+    border: 1px solid #eee;
+    border-radius: 0.875rem;
+    background: #f8f8fa;
+  }
+  .btn-mini {
+    margin-left: auto;
+    background: transparent;
+    border: 1px solid #e5e5e5;
+    border-radius: 0.5rem;
+    padding: 0.25rem 0.5rem;
+    cursor: pointer;
+    color: #777;
+    display: inline-flex;
+    align-items: center;
+    transition: all 0.2s ease;
+  }
+  .btn-mini:hover {
+    color: #7c3aed;
+    border-color: #7c3aed;
+    background: rgba(124, 58, 237, 0.05);
+  }
+
+  .settings-actions {
+    display: flex;
+    gap: 0.75rem;
+    flex-wrap: wrap;
+    padding: 1rem 0 2rem;
+  }
+  .btn-danger {
+    background: rgba(239, 68, 68, 0.1);
+    color: #dc2626;
+    border: 1px solid rgba(239, 68, 68, 0.25);
+  }
+  .btn-danger:hover {
+    background: rgba(239, 68, 68, 0.18);
+    border-color: #dc2626;
+  }
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    padding: 0.625rem 1.25rem;
+    border-radius: 0.625rem;
+    font-size: 0.9375rem;
+    font-weight: 500;
+    cursor: pointer;
+    border: 1px solid transparent;
+    text-decoration: none;
+    transition: all 0.2s ease;
+    background: transparent;
+    color: inherit;
+  }
+  .btn-primary {
+    background: linear-gradient(135deg, #7c3aed, #ec4899);
+    color: white;
+    box-shadow: 0 4px 12px rgba(124, 58, 237, 0.25);
+  }
+  .btn-primary:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 6px 16px rgba(124, 58, 237, 0.35);
+  }
+  .btn-secondary {
+    background: rgba(124, 58, 237, 0.08);
+    color: #7c3aed;
+    border: 1px solid rgba(124, 58, 237, 0.2);
+  }
+  .btn-secondary:hover {
+    background: rgba(124, 58, 237, 0.15);
+  }
+
+  @media (max-width: 768px) {
+    .settings-bg-row { flex-direction: column; }
+    .settings-bg-preview { flex: 1 1 auto; width: 100%; }
+  }
+</style>
+
+<script>
+  // 文件选择后回显文件名
+  document.getElementById('bgFileInput').addEventListener('change', function() {
+    var hint = document.getElementById('selectedFileName');
+    if (this.files && this.files.length) {
+      hint.textContent = '已选择：' + this.files[0].name + '（' + Math.round(this.files[0].size / 1024) + ' KB）—— 点击"保存设置"后生效';
+      hint.style.display = 'block';
+    } else {
+      hint.style.display = 'none';
+    }
+  });
+
+  // 实时刷新预览 iframe：把当前表单字段通过 URL 参数传过去
+  var previewTimer = null;
+  function updatePreview() {
+    clearTimeout(previewTimer);
+    previewTimer = setTimeout(function() {
+      var fitEl = document.querySelector('input[name=fit_mode]:checked');
+      var params = new URLSearchParams({
+        fit_mode: fitEl ? fitEl.value : 'cover',
+        position_x: document.getElementById('position_x').value,
+        position_y: document.getElementById('position_y').value,
+        zoom: document.getElementById('zoom').value,
+        overlay_opacity: document.getElementById('overlay_opacity').value
+      });
+      document.getElementById('settings_preview').src =
+        '{{ url_for("admin_login_preview") }}?' + params.toString();
+    }, 250);  // 节流：拖动滑块时 250ms 才刷一次 iframe
+  }
+</script>
+{% endblock %}

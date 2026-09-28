@@ -509,6 +509,46 @@ body {
   transform: translateY(-4px) scale(1.01);
 }
 
+/* 卡片整块点击热区（覆盖卡片但位于下载按钮之下） */
+.work-card-hit {
+  position: absolute;
+  inset: 0;
+  z-index: 5;
+  border-radius: 1.5rem;
+}
+
+/* 下载 HTML 按钮 */
+.work-download-btn {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  z-index: 6;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 5px 10px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 1;
+  color: #7c3aed;
+  background: rgba(255, 255, 255, 0.92);
+  border: 1px solid rgba(124, 58, 237, 0.25);
+  box-shadow: 0 2px 8px rgba(124, 58, 237, 0.15);
+  text-decoration: none;
+  backdrop-filter: blur(6px);
+  transition: color 0.2s ease, background 0.2s ease, border-color 0.2s ease, transform 0.2s ease;
+}
+.work-download-btn:hover {
+  color: #fff;
+  background: linear-gradient(135deg, #7c3aed, #ec4899);
+  border-color: transparent;
+  transform: translateY(-1px);
+}
+.work-download-btn:active {
+  transform: translateY(0) scale(0.97);
+}
+
 .work-private-badge {
   position: absolute;
   top: 12px;

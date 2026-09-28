@@ -2,6 +2,15 @@
 {% block title %}登录 - 个人作品集{% endblock %}
 
 {% block content %}
+{% set ls = login_settings or {} %}
+<!-- 自定义登录页背景（由管理后台设置） -->
+<div class="login-bg" aria-hidden="true"
+     style="--login-bg-fit: {{ ls.fit_mode or 'cover' }}; --login-bg-x: {{ ls.position_x|default(50) }}%; --login-bg-y: {{ ls.position_y|default(50) }}%; --login-bg-zoom: {{ (ls.zoom|default(100)) / 100 }}; --login-bg-overlay: {{ (ls.overlay_opacity|default(0)) / 100 }};">
+  {% if ls.background_image %}
+  <img src="{{ url_for('static', filename='images/' + ls.background_image) }}" alt="">
+  {% endif %}
+  <div class="login-bg-overlay"></div>
+</div>
 <div class="page-container-sm page-fade-in">
   <div class="login-card card card-body-lg animate-scale-in">
     <!-- 顶部装饰 -->
@@ -131,6 +140,49 @@
     z-index: -1;
     opacity: 0.3;
     filter: blur(20px);
+  }
+
+  /* ===== 自定义背景图（管理后台设置） ===== */
+  .login-bg {
+    position: fixed;
+    inset: 0;
+    z-index: -2;
+    overflow: hidden;
+    pointer-events: none;
+    /* 没有背景图时给一个柔和的渐变占位（同时保证 textarea/input 滚动时背景稳定） */
+    background:
+      radial-gradient(circle at 20% 30%, rgba(124, 58, 237, 0.18) 0%, transparent 50%),
+      radial-gradient(circle at 80% 70%, rgba(236, 72, 153, 0.18) 0%, transparent 50%),
+      linear-gradient(135deg, #fafaff 0%, #f3eefe 100%);
+    background-attachment: fixed;
+  }
+  .login-bg img {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: var(--login-bg-fit, cover);
+    object-position: var(--login-bg-x, 50%) var(--login-bg-y, 50%);
+    transform: scale(var(--login-bg-zoom, 1));
+    transform-origin: var(--login-bg-x, 50%) var(--login-bg-y, 50%);
+    transition: object-position 0.2s ease, transform 0.2s ease;
+  }
+  .login-bg-overlay {
+    position: absolute;
+    inset: 0;
+    background: rgba(0, 0, 0, var(--login-bg-overlay, 0));
+    transition: background 0.2s ease;
+  }
+  /* 登录页隐藏装饰性的视差 blob 与浮动元素，避免与自定义背景冲突 */
+  .page-login .parallax-blob,
+  .page-login .floating-shape {
+    display: none !important;
+  }
+  /* 自定义背景时给卡片增加毛玻璃，提升可读性 */
+  .page-login .login-card {
+    background: rgba(255, 255, 255, 0.96);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
   }
 </style>
 {% endblock %}

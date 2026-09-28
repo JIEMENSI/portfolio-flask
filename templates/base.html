@@ -21,7 +21,7 @@
   {% block extra_css %}{% endblock %}
   <link rel="stylesheet" href="{{ url_for('static', filename='css/works.css') }}?v=2">
 </head>
-<body class="text-gray-800 min-h-screen flex flex-col">
+<body class="text-gray-800 min-h-screen flex flex-col {% if request.endpoint == 'login' or request.endpoint == 'admin_login_preview' %}page-login{% endif %}">
   <!-- 视差装饰背景 blob -->
   <div class="parallax-blob parallax-blob-1"></div>
   <div class="parallax-blob parallax-blob-2"></div>
@@ -108,6 +108,7 @@
             {% else %}
               <a href="{{ url_for('admin') }}" class="nav-text-btn">管理后台</a>
             {% endif %}
+            <a href="{{ url_for('admin_settings') }}" class="nav-text-btn {{ 'nav-text-btn-active' if request.endpoint == 'admin_settings' else '' }}">设置</a>
             <a href="{{ url_for('logout') }}" class="nav-text-btn">退出</a>
           {% elif session.get('role') == 'guest' %}
             <a href="{{ url_for('login') }}" class="nav-btn-login">管理员登录</a>

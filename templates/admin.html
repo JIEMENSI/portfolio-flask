@@ -29,6 +29,13 @@
         </svg>
         上传作品
       </a>
+      <a href="{{ url_for('admin_settings') }}" class="btn btn-secondary settings-btn">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <circle cx="12" cy="12" r="3"/>
+          <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.6 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9 1.65 1.65 0 0 0 4.27 7.18l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.6a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09A1.65 1.65 0 0 0 15 4.6a1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9c.36.16.68.4.93.71.25.31.43.67.51 1.06.08.39.06.79-.06 1.18"/>
+        </svg>
+        站点设置
+      </a>
     </div>
   </div>
 
@@ -301,6 +308,25 @@
     align-items: center;
     gap: 0.5rem;
     padding: 0.75rem 1.5rem;
+  }
+  .settings-btn {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.75rem 1.25rem;
+    background: rgba(124, 58, 237, 0.08);
+    color: #7c3aed;
+    border: 1px solid rgba(124, 58, 237, 0.2);
+    border-radius: 0.625rem;
+    font-weight: 500;
+    font-size: 0.9375rem;
+    text-decoration: none;
+    transition: all 0.2s ease;
+  }
+  .settings-btn:hover {
+    background: rgba(124, 58, 237, 0.15);
+    border-color: rgba(124, 58, 237, 0.4);
+    transform: translateY(-1px);
   }
   
   .admin-table-card {

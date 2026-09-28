@@ -20,10 +20,13 @@ app.secret_key = os.environ.get("SECRET_KEY", "portfolio-secret-key-change-in-pr
 app.config["UPLOAD_FOLDER"] = os.path.join(BASE_DIR, "static", "uploads")
 app.config["COVER_FOLDER"] = os.path.join(BASE_DIR, "static", "covers")
 app.config["AVATAR_FOLDER"] = os.path.join(BASE_DIR, "static", "avatars")
+app.config["LOGIN_BG_FOLDER"] = os.path.join(BASE_DIR, "static", "images")
 app.config["MAX_CONTENT_LENGTH"] = 16 * 1024 * 1024  # 16MB max
 ALLOWED_COVER_EXT = {".png", ".jpg", ".jpeg", ".gif", ".webp"}
 ALLOWED_AVATAR_EXT = {".png", ".jpg", ".jpeg", ".gif", ".webp"}
 ALLOWED_HTML_EXT = {".html", ".htm"}
+ALLOWED_LOGIN_BG_EXT = {".jpg", ".jpeg", ".png", ".webp"}
+LOGIN_BG_MAX_BYTES = 5 * 1024 * 1024  # 登录页背景图最大 5MB
 app.config["SEND_FILE_MAX_AGE_DEFAULT"] = 60 * 60 * 24 * 7  # 静态资源默认缓存 7 天
 app.config["SESSION_COOKIE_HTTPONLY"] = True
 app.config["SESSION_COOKIE_SAMESITE"] = "Lax"
@@ -141,6 +144,7 @@ DATA_FILE = os.path.join(BASE_DIR, "data", "works.json")
 AVATARS_FILE = os.path.join(BASE_DIR, "data", "avatars.json")
 GROUPS_FILE = os.path.join(BASE_DIR, "data", "groups.json")
 VISITORS_FILE = os.path.join(BASE_DIR, "data", "visitors.json")
+LOGIN_SETTINGS_FILE = os.path.join(BASE_DIR, "data", "login_settings.json")
 
 
 def load_visitor_stats():
@@ -190,11 +194,22 @@ def track_visitor():
     session["visitor_counted"] = True
 DEFAULT_AVATAR = "images/avatar.png"  # 相对 static 目录
 DEFAULT_GROUP = "未分组"  # 默认分组名
+DEFAULT_LOGIN_SETTINGS = {
+    "background_image": None,  # 相对 LOGIN_BG_FOLDER 的文件名，None=未上传，使用默认
+    "fit_mode": "cover",       # cover=裁剪填满 | contain=完整显示
+    "position_x": 50,          # object-position X（0-100%）
+    "position_y": 50,          # object-position Y（0-100%）
+    "zoom": 100,               # 缩放 100-200%
+    "overlay_opacity": 0,      # 半透明黑色遮罩的不透明度（0-60），用于保证白卡可读
+    "allow_guest_download": True,  # 是否允许游客下载作品 HTML 源文件（管理员始终可下载）
+    "updated_at": "",
+}
 
 # 确保目录存在
 os.makedirs(app.config["UPLOAD_FOLDER"], exist_ok=True)
 os.makedirs(app.config["COVER_FOLDER"], exist_ok=True)
 os.makedirs(app.config["AVATAR_FOLDER"], exist_ok=True)
+os.makedirs(app.config["LOGIN_BG_FOLDER"], exist_ok=True)
 os.makedirs(os.path.join(BASE_DIR, "data"), exist_ok=True)
 os.makedirs(os.path.join(BASE_DIR, "static", "css"), exist_ok=True)
 
@@ -413,6 +428,28 @@ def load_groups():
 def save_groups(groups):
     with open(GROUPS_FILE, "w", encoding="utf-8") as f:
         json.dump(groups, f, ensure_ascii=False, indent=2)
+
+
+def load_login_settings():
+    """读取登录页背景图与裁剪参数（缺字段时与默认值合并，保证字段齐全）"""
+    def parser(f):
+        data = json.load(f)
+        merged = dict(DEFAULT_LOGIN_SETTINGS)
+        if isinstance(data, dict):
+            for k in DEFAULT_LOGIN_SETTINGS:
+                if k in data:
+                    merged[k] = data[k]
+        return merged
+    return _cached_load(LOGIN_SETTINGS_FILE, parser, dict(DEFAULT_LOGIN_SETTINGS))
+
+def save_login_settings(settings):
+    """保存登录页设置，写入 updated_at 时间戳，并失效缓存"""
+    payload = {k: settings.get(k, v) for k, v in DEFAULT_LOGIN_SETTINGS.items()}
+    payload["updated_at"] = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    with open(LOGIN_SETTINGS_FILE, "w", encoding="utf-8") as f:
+        json.dump(payload, f, ensure_ascii=False, indent=2)
+    _invalidate(LOGIN_SETTINGS_FILE)
+    return payload
     _invalidate(GROUPS_FILE)
 
 def load_avatars():
@@ -467,6 +504,10 @@ def inject_user():
     uptime_seconds = int(time.time() - SITE_LAUNCH_TIME)
     visitor_count = int(load_visitor_stats().get("total", 0))
     role = session.get("role")
+    # 下载权限：管理员始终可下载；游客是否可下载由设置页开关控制
+    can_download = role == "admin" or (
+        role == "guest" and bool(load_login_settings().get("allow_guest_download", True))
+    )
     if role == "admin":
         username = session.get("username", "")
         avatar_url, avatar_version = get_avatar_info(username)
@@ -477,6 +518,7 @@ def inject_user():
             "avatar_version": avatar_version,
             "uptime_seconds": uptime_seconds,
             "visitor_count": visitor_count,
+            "can_download": can_download,
         }
     if role == "guest":
         return {
@@ -486,8 +528,9 @@ def inject_user():
             "avatar_version": "1",
             "uptime_seconds": uptime_seconds,
             "visitor_count": visitor_count,
+            "can_download": can_download,
         }
-    return {"user_role": None, "display_name": None, "avatar_url": None, "avatar_version": "1", "uptime_seconds": uptime_seconds, "visitor_count": visitor_count}
+    return {"user_role": None, "display_name": None, "avatar_url": None, "avatar_version": "1", "uptime_seconds": uptime_seconds, "visitor_count": visitor_count, "can_download": can_download}
 
 @app.route("/")
 def index():
@@ -562,6 +605,35 @@ def preview(work_id):
         abort(404)
     return html_content, 200, {"Content-Type": "text/html; charset=utf-8"}
 
+@app.route("/download/<work_id>")
+def download_work(work_id):
+    """下载作品 HTML 源文件（需已登录；私有作品仅管理员可下载）"""
+    if session.get("role") not in ("admin", "guest"):
+        return redirect(url_for("login"))
+    # 游客下载权限由管理员在设置页控制；管理员始终可下载
+    if session.get("role") == "guest" and not load_login_settings().get("allow_guest_download", True):
+        flash("管理员已关闭游客下载功能", "error")
+        return redirect(url_for("works_list"))
+    works = load_works()
+    work = next((w for w in works if w["id"] == work_id), None)
+    if not work or not work.get("filename"):
+        abort(404)
+    # 私有作品：非管理员不可下载（与 preview 的可见性保持一致）
+    if not work.get("is_public", True) and session.get("role") != "admin":
+        flash("该作品为私有，需要管理员权限下载", "error")
+        return redirect(url_for("works_list"))
+    filename = work["filename"]
+    if not os.path.exists(os.path.join(app.config["UPLOAD_FOLDER"], filename)):
+        abort(404)
+    # 用作品标题作为下载文件名，剔除不能用于文件名的字符
+    download_name = (work.get("title") or "作品").strip() or "作品"
+    for ch in '\\/:*?"<>|\r\n\t':
+        download_name = download_name.replace(ch, "_")
+    if not download_name.lower().endswith((".html", ".htm")):
+        download_name += ".html"
+    return send_from_directory(app.config["UPLOAD_FOLDER"], filename,
+                               as_attachment=True, download_name=download_name)
+
 @app.route("/login", methods=["GET", "POST"])
 def login():
     if session.get("role") == "admin":
@@ -577,7 +649,7 @@ def login():
             return redirect(url_for("admin"))
         else:
             flash("账号或密码错误", "error")
-    return render_template("login.html")
+    return render_template("login.html", login_settings=load_login_settings())
 
 @app.route("/guest_login")
 def guest_login():
@@ -957,6 +1029,93 @@ def delete_work(work_id):
     else:
         flash("作品不存在", "error")
     return redirect(url_for("admin"))
+
+
+@app.route("/admin/settings", methods=["GET", "POST"])
+@admin_required
+def admin_settings():
+    """管理后台设置：登录页背景图与裁剪参数"""
+    if request.method == "POST":
+        settings = load_login_settings()
+        # 更新裁剪参数
+        try:
+            settings["fit_mode"] = "contain" if request.form.get("fit_mode") == "contain" else "cover"
+            settings["position_x"] = max(0, min(100, int(request.form.get("position_x", 50))))
+            settings["position_y"] = max(0, min(100, int(request.form.get("position_y", 50))))
+            settings["zoom"] = max(100, min(200, int(request.form.get("zoom", 100))))
+            settings["overlay_opacity"] = max(0, min(60, int(request.form.get("overlay_opacity", 0))))
+        except (ValueError, TypeError):
+            flash("参数格式不正确", "error")
+            return redirect(url_for("admin_settings"))
+
+        # 下载权限：复选框勾选=允许游客下载，未勾选=关闭
+        settings["allow_guest_download"] = request.form.get("allow_guest_download") == "on"
+
+        # 可选：上传新背景图
+        file = request.files.get("login_bg")
+        if file and file.filename:
+            ext = os.path.splitext(file.filename)[1].lower()
+            if ext not in ALLOWED_LOGIN_BG_EXT:
+                flash("图片格式不支持（仅 jpg/jpeg/png/webp）", "error")
+                return redirect(url_for("admin_settings"))
+            file.seek(0, 2)
+            size = file.tell()
+            file.seek(0)
+            if size > LOGIN_BG_MAX_BYTES:
+                flash(f"图片过大，最大 {LOGIN_BG_MAX_BYTES // 1024 // 1024}MB", "error")
+                return redirect(url_for("admin_settings"))
+            new_name = f"login-bg-{uuid.uuid4().hex[:12]}{ext}"
+            dest = os.path.join(app.config["LOGIN_BG_FOLDER"], new_name)
+            file.save(dest)
+            # 删除旧文件
+            old = settings.get("background_image")
+            if old and old != new_name:
+                old_path = os.path.join(app.config["LOGIN_BG_FOLDER"], old)
+                if os.path.exists(old_path):
+                    try: os.remove(old_path)
+                    except Exception: pass
+            settings["background_image"] = new_name
+
+        save_login_settings(settings)
+        flash("登录页设置已保存", "success")
+        return redirect(url_for("admin_settings"))
+
+    return render_template("admin_settings.html", login_settings=load_login_settings())
+
+
+@app.route("/admin/settings/reset", methods=["POST"])
+@admin_required
+def admin_settings_reset():
+    """恢复登录页默认设置（清空自定义图片与裁剪参数）"""
+    settings = load_login_settings()
+    old = settings.get("background_image")
+    if old:
+        old_path = os.path.join(app.config["LOGIN_BG_FOLDER"], old)
+        if os.path.exists(old_path):
+            try: os.remove(old_path)
+            except Exception: pass
+    save_login_settings(dict(DEFAULT_LOGIN_SETTINGS))
+    flash("已恢复登录页默认", "success")
+    return redirect(url_for("admin_settings"))
+
+
+@app.route("/admin/login-preview")
+@admin_required
+def admin_login_preview():
+    """设置页预览用：渲染登录页背景与卡片；查询参数可临时覆盖设置实现实时预览"""
+    settings = load_login_settings()
+    # 允许查询参数覆盖（仅用于预览，不写回文件）
+    if "fit_mode" in request.args:
+        settings["fit_mode"] = "contain" if request.args.get("fit_mode") == "contain" else "cover"
+    for k, lo, hi in [("position_x", 0, 100), ("position_y", 0, 100),
+                       ("zoom", 100, 200), ("overlay_opacity", 0, 60)]:
+        if k in request.args:
+            try:
+                settings[k] = max(lo, min(hi, int(request.args.get(k))))
+            except (ValueError, TypeError):
+                pass
+    return render_template("login.html", login_settings=settings)
+
 
 @app.route("/api/uptime")
 def get_uptime():
