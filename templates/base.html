@@ -19,7 +19,7 @@
     .content-wrapper { position: relative; z-index: 1; }
   </style>
   {% block extra_css %}{% endblock %}
-  <link rel="stylesheet" href="{{ url_for('static', filename='css/works.css') }}?v=2">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/works.css') }}?v=3">
 </head>
 <body class="text-gray-800 min-h-screen flex flex-col {% if request.endpoint == 'login' or request.endpoint == 'admin_login_preview' %}page-login{% endif %}">
   <!-- 视差装饰背景 blob -->

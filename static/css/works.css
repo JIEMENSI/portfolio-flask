@@ -217,6 +217,17 @@ body {
   opacity: 0.3;
 }
 
+/* ===== 登录页：导航栏透明，让自定义背景图完整显示 ===== */
+.page-login .nav-bar {
+  background: transparent !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+  box-shadow: none !important;
+}
+.page-login .nav-bar::after {
+  display: none !important;
+}
+
 .nav-brand {
   font-size: 1.375rem !important;
   font-weight: 800 !important;
