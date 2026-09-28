@@ -1114,6 +1114,10 @@ def admin_login_preview():
                 settings[k] = max(lo, min(hi, int(request.args.get(k))))
             except (ValueError, TypeError):
                 pass
+    # 已选但未上传的本地图片：临时预览地址（blob:/http(s):/data:image），仅用于预览，不写回文件
+    bg_url = (request.args.get("bg_url") or "").strip()
+    if bg_url.startswith(("blob:", "http://", "https://", "data:image/")):
+        settings["preview_bg_url"] = bg_url
     return render_template("login.html", login_settings=settings)
 
 

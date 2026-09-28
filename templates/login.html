@@ -3,11 +3,12 @@
 
 {% block content %}
 {% set ls = login_settings or {} %}
+{% set bg_src = ls.preview_bg_url or (url_for('static', filename='images/' + ls.background_image) if ls.background_image else '') %}
 <!-- 自定义登录页背景（由管理后台设置） -->
 <div class="login-bg" aria-hidden="true"
      style="--login-bg-fit: {{ ls.fit_mode or 'cover' }}; --login-bg-x: {{ ls.position_x|default(50) }}%; --login-bg-y: {{ ls.position_y|default(50) }}%; --login-bg-zoom: {{ (ls.zoom|default(100)) / 100 }}; --login-bg-overlay: {{ (ls.overlay_opacity|default(0)) / 100 }};">
-  {% if ls.background_image %}
-  <img src="{{ url_for('static', filename='images/' + ls.background_image) }}" alt="">
+  {% if bg_src %}
+  <img src="{{ bg_src }}" alt="">
   {% endif %}
   <div class="login-bg-overlay"></div>
 </div>

@@ -40,22 +40,18 @@
         背景图
       </div>
       <div class="settings-bg-row">
-        <div class="settings-bg-preview">
-          {% if login_settings.background_image %}
-            <img id="current_bg_img"
-                 src="{{ url_for('static', filename='images/' + login_settings.background_image) }}?v={{ login_settings.updated_at|default('1') }}"
-                 alt="当前背景图">
-          {% else %}
-            <div class="settings-bg-empty">
-              <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
-                <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
-                <circle cx="8.5" cy="8.5" r="1.5"/>
-                <polyline points="21 15 16 10 5 21"/>
-              </svg>
-              <p>未上传背景图</p>
-              <span>上传后将以原图显示在登录页</span>
-            </div>
-          {% endif %}
+        <div class="settings-bg-preview" id="bgPreviewBox">
+          <img id="bgPreviewImg" alt="背景图预览"
+               {% if login_settings.background_image %}src="{{ url_for('static', filename='images/' + login_settings.background_image) }}?v={{ login_settings.updated_at|default('1') }}"{% else %}style="display:none;"{% endif %}>
+          <div class="settings-bg-empty" id="bgEmptyHint"{% if login_settings.background_image %} style="display:none;"{% endif %}>
+            <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+              <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
+              <circle cx="8.5" cy="8.5" r="1.5"/>
+              <polyline points="21 15 16 10 5 21"/>
+            </svg>
+            <p>未上传背景图</p>
+            <span>选择图片后可在此即时预览，点"保存设置"正式生效</span>
+          </div>
         </div>
         <div class="settings-bg-controls">
           <label class="file-pick">
@@ -168,30 +164,31 @@
       <iframe id="settings_preview" class="settings-preview-iframe"
               src="{{ url_for('admin_login_preview') }}"
               title="登录页预览"></iframe>
-      <p class="settings-hint" style="margin-top:0.75rem;">提示：调整参数时预览实时更新；满意后点"保存设置"才会真正生效到登录页。</p>
+      <p class="settings-hint" style="margin-top:0.75rem;">提示：预览为只读效果图，<strong>不能点击操作</strong>；调整参数或选择图片时预览会即时更新；点"保存设置"后才真正生效到登录页。</p>
     </div>
 
-    <!-- 操作按钮 -->
-    <div class="settings-actions">
-      <button type="submit" class="btn btn-primary">
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="margin-right:6px;">
-          <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/>
-          <polyline points="17 21 17 13 7 13 7 21"/>
-          <polyline points="7 3 7 8 15 8"/>
-        </svg>
-        保存设置
-      </button>
-      <form method="POST" action="{{ url_for('admin_settings_reset') }}" style="display:inline;" onsubmit="return confirm('确定要恢复默认设置并删除已上传的自定义背景图吗？');">
-        <button type="submit" class="btn btn-danger">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-right:6px;">
-            <path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/>
-            <path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
-          </svg>
-          恢复默认
-        </button>
-      </form>
-    </div>
   </form>
+
+  <!-- 操作按钮（放在主表单之外，避免表单嵌套导致「恢复默认」误提交到保存接口） -->
+  <div class="settings-actions">
+    <button type="submit" form="settingsForm" class="btn btn-primary">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="margin-right:6px;">
+        <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/>
+        <polyline points="17 21 17 13 7 13 7 21"/>
+        <polyline points="7 3 7 8 15 8"/>
+      </svg>
+      保存设置
+    </button>
+    <form method="POST" action="{{ url_for('admin_settings_reset') }}" style="display:inline;" onsubmit="return confirm('确定要恢复默认设置并删除已上传的自定义背景图吗？');">
+      <button type="submit" class="btn btn-danger">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-right:6px;">
+          <path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/>
+          <path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
+        </svg>
+        恢复默认
+      </button>
+    </form>
+  </div>
 </div>
 
 <style>
@@ -487,14 +484,34 @@
 </style>
 
 <script>
-  // 文件选择后回显文件名
+  // 本地已选图片的临时（blob）地址：仅用于即时预览，未点"保存设置"前不会上传
+  var localBgUrl = null;
+
+  // 选择文件后：左侧立即本地预览 + 回显文件名 + 同步刷新右侧登录页预览
   document.getElementById('bgFileInput').addEventListener('change', function() {
     var hint = document.getElementById('selectedFileName');
+    var img = document.getElementById('bgPreviewImg');
+    var empty = document.getElementById('bgEmptyHint');
+
     if (this.files && this.files.length) {
-      hint.textContent = '已选择：' + this.files[0].name + '（' + Math.round(this.files[0].size / 1024) + ' KB）—— 点击"保存设置"后生效';
+      var f = this.files[0];
+      // 释放上一张临时图，避免浏览器内存泄漏
+      if (localBgUrl) { URL.revokeObjectURL(localBgUrl); }
+      localBgUrl = URL.createObjectURL(f);
+
+      img.src = localBgUrl;
+      img.style.display = '';
+      if (empty) empty.style.display = 'none';
+
+      hint.textContent = '已选择：' + f.name + '（' + Math.round(f.size / 1024) + ' KB）—— 上方为本地预览，点击"保存设置"后正式生效';
       hint.style.display = 'block';
+
+      updatePreview();  // 让右侧"实时预览"也显示这张本地图片
     } else {
+      localBgUrl = null;
       hint.style.display = 'none';
+      img.style.display = 'none';
+      if (empty) empty.style.display = '';
     }
   });
 
@@ -511,9 +528,32 @@
         zoom: document.getElementById('zoom').value,
         overlay_opacity: document.getElementById('overlay_opacity').value
       });
+      if (localBgUrl) { params.set('bg_url', localBgUrl); }  // 本地待上传图片，仅预览用
       document.getElementById('settings_preview').src =
         '{{ url_for("admin_login_preview") }}?' + params.toString();
     }, 250);  // 节流：拖动滑块时 250ms 才刷一次 iframe
   }
+
+  // 预览 iframe 设为只读：屏蔽内部所有可点击/可输入元素，防止在预览里误操作（页面滚动仍可用）
+  (function(){
+    var frame = document.getElementById('settings_preview');
+    if (!frame) return;
+    function lock(){
+      try {
+        var doc = frame.contentDocument;
+        if (!doc || !doc.head) return;
+        var st = doc.getElementById('__preview_readonly__');
+        if (!st) {
+          st = doc.createElement('style');
+          st.id = '__preview_readonly__';
+          doc.head.appendChild(st);
+        }
+        st.textContent =
+          'a,button,input,textarea,select,label,[onclick],[contenteditable]{pointer-events:none !important;cursor:default !important;}';
+      } catch (e) { /* 跨域等异常忽略 */ }
+    }
+    frame.addEventListener('load', lock);  // 每次 iframe 刷新后重新注入
+    lock();
+  })();
 </script>
 {% endblock %}
